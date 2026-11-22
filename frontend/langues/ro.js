@@ -676,4 +676,18 @@ window.TRAD = {
   "few": "{0} cereri depuse",
   "other": "{0} de cereri depuse"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Acces deschis",
+ "Aucune demande.": "Nicio cerere.",
+ "Supprimer définitivement la demande {0} ?": "Ștergeți definitiv cererea {0}?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "Această acțiune este ireversibilă. Rămâne consemnată în jurnalul de audit.",
+ "Retapez {0}": "Retastați {0}",
+ "Supprimer définitivement": "Șterge definitiv",
+ "Demande supprimée.": "Cerere ștearsă.",
+ "Demande supprimée": "Cerere ștearsă",
+ "Accès ouvert : à révoquer par le délégué": "Acces deschis: de revocat de către responsabil",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Ștergeți o cerere, de exemplu la solicitarea autorului. Administratorul nu vede conținutul cererilor și nici datele: doar ce îi trebuie pentru a le recunoaște. Un acces încă deschis trebuie mai întâi revocat de responsabilul cu protecția datelor.",
+ "La référence saisie ne correspond pas à la demande.": "Referința introdusă nu corespunde cererii.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "Pentru această cerere există încă un acces deschis: responsabilul cu protecția datelor trebuie să îl revoce mai întâi.",
 };

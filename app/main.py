@@ -12,7 +12,7 @@ from app.config import PLANIFICATEUR_ACTIF, PLANIFICATEUR_HEURE, SEED_AUTO
 from app.database import Base, SessionLocal, engine
 from app.models import Utilisateur
 from app.routers import (
-    auth, autorisations, demandes, extractions, hopitaux, import_donnees, journal,
+    admin_demandes, auth, autorisations, demandes, extractions, hopitaux, import_donnees, journal,
     lots, mails, notifications, parametres, politiques, rapports, support, utilisateurs,
 )
 
@@ -166,6 +166,7 @@ app.include_router(import_donnees.router)
 app.include_router(mails.router)
 app.include_router(politiques.router)
 app.include_router(support.router)
+app.include_router(admin_demandes.router)
 
 
 @app.get("/sante", tags=["Technique"])

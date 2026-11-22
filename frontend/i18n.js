@@ -36,7 +36,7 @@ document.documentElement.lang = langueCourante;
 document.documentElement.dir = infoLangue.dir;
 // Le dictionnaire se charge avant le reste de la page.
 if (langueCourante !== "fr") {
-  document.write('<script src="langues/' + langueCourante + '.js?v=7"><\/script>');
+  document.write('<script src="langues/' + langueCourante + '.js?v=8"><\/script>');
 }
 
 function changerLangue(code) {

@@ -709,4 +709,18 @@ window.TRAD = {
   "many": "{0} طلبًا مقدَّمًا",
   "other": "{0} طلب مقدَّم"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "الوصول مفتوح",
+ "Aucune demande.": "لا توجد طلبات.",
+ "Supprimer définitivement la demande {0} ?": "حذف الطلب {0} نهائيًا؟",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "هذا الإجراء لا رجعة فيه. يبقى مسجّلًا في سجل التدقيق.",
+ "Retapez {0}": "أعد كتابة {0}",
+ "Supprimer définitivement": "حذف نهائي",
+ "Demande supprimée.": "تم حذف الطلب.",
+ "Demande supprimée": "تم حذف الطلب",
+ "Accès ouvert : à révoquer par le délégué": "الوصول مفتوح: يجب أن يلغيه المفوّض",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "حذف طلب، مثلًا بناءً على طلب صاحبه. لا يرى المسؤول لا محتوى الطلبات ولا البيانات: فقط ما يلزم للتعرّف عليها. يجب أن يلغي مفوّض حماية البيانات أولًا أي وصول ما زال مفتوحًا.",
+ "La référence saisie ne correspond pas à la demande.": "المرجع المُدخَل لا يطابق الطلب.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "ما زال هناك وصول مفتوح لهذا الطلب: يجب أن يلغيه مفوّض حماية البيانات أولًا.",
 };

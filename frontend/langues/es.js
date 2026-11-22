@@ -675,4 +675,18 @@ window.TRAD = {
   "one": "{0} solicitud presentada",
   "other": "{0} solicitudes presentadas"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Acceso abierto",
+ "Aucune demande.": "Ninguna solicitud.",
+ "Supprimer définitivement la demande {0} ?": "¿Eliminar definitivamente la solicitud {0}?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "Esta acción es irreversible. Queda registrada en el registro de auditoría.",
+ "Retapez {0}": "Vuelva a escribir {0}",
+ "Supprimer définitivement": "Eliminar definitivamente",
+ "Demande supprimée.": "Solicitud eliminada.",
+ "Demande supprimée": "Solicitud eliminada",
+ "Accès ouvert : à révoquer par le délégué": "Acceso abierto: debe revocarlo el delegado",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Eliminar una solicitud, por ejemplo a petición de su autor. El administrador no ve ni el contenido de las solicitudes ni los datos: solo lo necesario para reconocerlas. Un acceso aún abierto debe ser revocado antes por el delegado de protección de datos.",
+ "La référence saisie ne correspond pas à la demande.": "La referencia introducida no corresponde a la solicitud.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "Aún hay un acceso abierto para esta solicitud: el delegado de protección de datos debe revocarlo primero.",
 };

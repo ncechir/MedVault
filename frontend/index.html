@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="i18n.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
 <script>
 tailwind.config = {
   darkMode: 'class',
@@ -914,6 +914,16 @@ tailwind.config = {
       </div>
     </section>
 
+    <section data-vue="gestion-demandes" class="vue hidden">
+      <h2 class="text-2xl font-bold tracking-tight">Demandes</h2>
+      <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
+        Supprimer une demande, par exemple à la demande de son auteur. L'administrateur
+        ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître.
+        Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.
+      </p>
+      <div id="liste-gestion-demandes" class="mt-6 bg-carte rounded-xl border border-trait overflow-hidden"></div>
+    </section>
+
     <section data-vue="comptes" class="vue hidden">
       <h2 class="text-2xl font-bold tracking-tight">Comptes</h2>
       <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
@@ -1003,6 +1013,6 @@ tailwind.config = {
 
 <div id="notif" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm text-white shadow-lg z-50"></div>
 
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

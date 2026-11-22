@@ -665,4 +665,18 @@ window.TRAD = {
   "one": "{0} request submitted",
   "other": "{0} requests submitted"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Access open",
+ "Aucune demande.": "No requests.",
+ "Supprimer définitivement la demande {0} ?": "Permanently delete request {0}?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "This action cannot be undone. It remains recorded in the audit log.",
+ "Retapez {0}": "Retype {0}",
+ "Supprimer définitivement": "Delete permanently",
+ "Demande supprimée.": "Request deleted.",
+ "Demande supprimée": "Request deleted",
+ "Accès ouvert : à révoquer par le délégué": "Access open: to be revoked by the officer",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Delete a request, for example at its author's request. The administrator sees neither the content of requests nor any data: only enough to recognise them. An access that is still open must first be revoked by the data protection officer.",
+ "La référence saisie ne correspond pas à la demande.": "The reference entered does not match the request.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "An access is still open for this request: the data protection officer must revoke it first.",
 };

@@ -665,4 +665,18 @@ window.TRAD = {
   "one": "{0} Antrag eingereicht",
   "other": "{0} Anträge eingereicht"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Zugriff offen",
+ "Aucune demande.": "Keine Anträge.",
+ "Supprimer définitivement la demande {0} ?": "Antrag {0} endgültig löschen?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "Diese Aktion ist unwiderruflich. Sie bleibt im Prüfprotokoll vermerkt.",
+ "Retapez {0}": "{0} erneut eingeben",
+ "Supprimer définitivement": "Endgültig löschen",
+ "Demande supprimée.": "Antrag gelöscht.",
+ "Demande supprimée": "Antrag gelöscht",
+ "Accès ouvert : à révoquer par le délégué": "Zugriff offen: vom Datenschutzbeauftragten zu widerrufen",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Einen Antrag löschen, zum Beispiel auf Wunsch seines Urhebers. Der Administrator sieht weder den Inhalt der Anträge noch Daten: nur das, was zum Wiedererkennen nötig ist. Ein noch offener Zugriff muss zuvor vom Datenschutzbeauftragten widerrufen werden.",
+ "La référence saisie ne correspond pas à la demande.": "Die eingegebene Referenz passt nicht zum Antrag.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "Für diesen Antrag ist noch ein Zugriff offen: Der Datenschutzbeauftragte muss ihn zuerst widerrufen.",
 };

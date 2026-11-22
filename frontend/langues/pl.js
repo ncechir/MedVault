@@ -687,4 +687,18 @@ window.TRAD = {
   "many": "{0} wniosków złożonych",
   "other": "{0} wniosków złożonych"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Dostęp otwarty",
+ "Aucune demande.": "Brak wniosków.",
+ "Supprimer définitivement la demande {0} ?": "Trwale usunąć wniosek {0}?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "Tej operacji nie można cofnąć. Pozostaje ona zapisana w dzienniku audytu.",
+ "Retapez {0}": "Wpisz ponownie {0}",
+ "Supprimer définitivement": "Usuń trwale",
+ "Demande supprimée.": "Wniosek usunięty.",
+ "Demande supprimée": "Wniosek usunięty",
+ "Accès ouvert : à révoquer par le délégué": "Dostęp otwarty: do odwołania przez inspektora",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Usuń wniosek, na przykład na prośbę jego autora. Administrator nie widzi ani treści wniosków, ani danych: tylko tyle, by je rozpoznać. Dostęp, który jest nadal otwarty, musi najpierw odwołać inspektor ochrony danych.",
+ "La référence saisie ne correspond pas à la demande.": "Wpisany numer nie pasuje do wniosku.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "Dla tego wniosku nadal otwarty jest dostęp: inspektor ochrony danych musi go najpierw odwołać.",
 };

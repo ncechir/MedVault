@@ -687,4 +687,18 @@ window.TRAD = {
   "many": "{0} поданных заявок",
   "other": "{0} поданной заявки"
  },
+
+ /* Support, profil, en-tête */
+ "Accès ouvert": "Доступ открыт",
+ "Aucune demande.": "Заявок нет.",
+ "Supprimer définitivement la demande {0} ?": "Удалить заявку {0} безвозвратно?",
+ "Cette action est irréversible. Elle reste tracée dans le journal d'audit.": "Это действие необратимо. Оно остаётся записанным в журнале аудита.",
+ "Retapez {0}": "Введите {0} ещё раз",
+ "Supprimer définitivement": "Удалить безвозвратно",
+ "Demande supprimée.": "Заявка удалена.",
+ "Demande supprimée": "Заявка удалена",
+ "Accès ouvert : à révoquer par le délégué": "Доступ открыт: должен быть отозван ответственным лицом",
+ "Supprimer une demande, par exemple à la demande de son auteur. L'administrateur ne voit ni le contenu des demandes ni les données : seulement de quoi les reconnaître. Un accès encore ouvert doit d'abord être révoqué par le délégué à la protection des données.": "Удаление заявки, например по просьбе автора. Администратор не видит ни содержимого заявок, ни данных: только то, что нужно, чтобы их узнать. Открытый доступ должен сначала отозвать ответственный за защиту данных.",
+ "La référence saisie ne correspond pas à la demande.": "Введённый номер не соответствует заявке.",
+ "Un accès est encore ouvert pour cette demande : le délégué à la protection des données doit d'abord le révoquer.": "По этой заявке ещё открыт доступ: сначала его должен отозвать ответственный за защиту данных.",
 };

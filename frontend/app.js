@@ -329,6 +329,7 @@ const ONGLETS = [
   { cle: "comptes",       libelle: "Comptes",          roles: ["ADMIN"] },
   { cle: "synthese",      libelle: "Synthèse",         roles: ["DPO"] },
   { cle: "journal",       libelle: "Connexions",       roles: ["ADMIN"] },
+  { cle: "gestion-demandes", libelle: "Demandes",       roles: ["ADMIN"] },
   { cle: "mails",         libelle: "E-mails",          roles: ["ADMIN"] },
   { cle: "support",       libelle: "Support",          roles: ["CHERCHEUR", "ADMIN"] },
 ];
@@ -407,6 +408,7 @@ async function afficher(cle) {
   if (cle === "synthese")      await chargerSynthese();
   if (cle === "journal")       await chargerJournal();
   if (cle === "mails")         await chargerMails();
+  if (cle === "gestion-demandes") await chargerGestionDemandes();
   if (cle === "support")       await chargerSupport();
   if (cle === "profil")        await chargerProfil();
 }
@@ -1815,7 +1817,7 @@ const RESUMES_ACTION = {
   PHOTO_PROFIL_SUPPRIMEE: "Photo de profil retirée", MOT_DE_PASSE_CHANGE: "Mot de passe changé",
   MOT_DE_PASSE_REFUSE: "Changement de mot de passe refusé",
   SUPPORT_TICKET_OUVERT: "Message au support", SUPPORT_MESSAGE: "Réponse au support",
-  SUPPORT_STATUT: "Statut d'un message support",
+  SUPPORT_STATUT: "Statut d'un message support", DEMANDE_SUPPRIMEE: "Demande supprimée",
 };
 
 
@@ -2272,6 +2274,69 @@ $("#form-support").addEventListener("submit", async (e) => {
     await majCompteurSupport();
   } catch (err) { notifier(err.message, "erreur"); }
 });
+
+
+// ==========================================================================
+// Administrateur : suppression de demandes
+// ==========================================================================
+async function chargerGestionDemandes() {
+  const demandes = await api("/admin/demandes");
+  const cible = $("#liste-gestion-demandes");
+  if (!demandes.length) {
+    cible.innerHTML = `<div class="px-5 py-8 text-sm text-ardoise text-center">Aucune demande.</div>`;
+    return;
+  }
+  cible.innerHTML = demandes.map(d => `
+    <div class="rangee px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span class="text-sm font-medium">${echapper(d.reference)}</span>
+          ${statut(d.statut)}
+          ${d.acces_ouvert ? chip("Accès ouvert", "border-vert text-vert bg-vertpale") : ""}
+        </div>
+        <p class="text-xs text-ardoise mt-1">
+          ${echapper(d.titre_projet)} · ${echapper(d.demandeur_nom)} (${echapper(d.demandeur_email)}) · ${dateCourte(d.cree_le)}
+        </p>
+      </div>
+      <button class="suppr-demande rounded-lg border border-trait text-ardoise px-3 py-1.5 text-xs font-medium hover:border-brique hover:text-brique transition-colors"
+              data-id="${d.id}" data-ref="${echapper(d.reference)}" ${d.acces_ouvert ? "disabled title=\"Accès ouvert : à révoquer par le délégué\"" : ""}>
+        Supprimer
+      </button>
+    </div>
+    <div class="confirmation-demande hidden rangee px-5 py-4 bg-briquepale/40 border-b border-trait" data-id="${d.id}"></div>`).join("");
+
+  $$(".suppr-demande").forEach(b => b.addEventListener("click", () => {
+    const { id, ref } = b.dataset;
+    const panneau = $(`.confirmation-demande[data-id="${id}"]`);
+    const dejaOuvert = !panneau.classList.contains("hidden");
+    $$(".confirmation-demande").forEach(p => p.classList.add("hidden"));
+    if (dejaOuvert) return;
+    panneau.classList.remove("hidden");
+    panneau.innerHTML = `
+      <p class="text-sm font-medium text-brique">Supprimer définitivement la demande ${echapper(ref)} ?</p>
+      <p class="text-xs text-ardoise mt-1">Cette action est irréversible. Elle reste tracée dans le journal d'audit.</p>
+      <div class="flex items-center gap-2 mt-3 flex-wrap">
+        <input type="text" placeholder="Retapez ${echapper(ref)}" autocomplete="off"
+               class="saisie rounded-lg border border-trait bg-sable/50 px-3 py-1.5 text-sm w-56">
+        <button class="confirmer rounded-lg bg-brique text-white px-3 py-1.5 text-xs font-semibold opacity-50" disabled>Supprimer définitivement</button>
+        <button class="annuler rounded-lg border border-trait px-3 py-1.5 text-xs">Annuler</button>
+      </div>`;
+    const saisie = $(".saisie", panneau), ok = $(".confirmer", panneau);
+    saisie.addEventListener("input", () => {
+      const bon = saisie.value.trim().toUpperCase() === ref.toUpperCase();
+      ok.disabled = !bon;
+      ok.classList.toggle("opacity-50", !bon);
+    });
+    $(".annuler", panneau).addEventListener("click", () => panneau.classList.add("hidden"));
+    ok.addEventListener("click", async () => {
+      try {
+        await api(`/admin/demandes/${id}?confirmation=${encodeURIComponent(saisie.value.trim())}`, { methode: "DELETE" });
+        notifier("Demande supprimée.");
+        await chargerGestionDemandes();
+      } catch (err) { notifier(err.message, "erreur"); }
+    });
+  }));
+}
 
 // ==========================================================================
 // Reprise de session
