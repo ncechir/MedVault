@@ -7,15 +7,17 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.audit import journaliser
+from app import controle_export, rapport_audit
+from app.audit import journaliser, verifier_chaine
 from app.database import get_db
 from app.dependencies import exiger_role
 from app.models import JournalAudit, Role, Utilisateur
-from app.schemas import AuditOut
+from app.schemas import AuditOut, IntegriteOut
 
 router = APIRouter(prefix="/journal", tags=["Traçabilité"])
 
 PILOTES = exiger_role(Role.ADMIN)
+AUDITEURS = exiger_role(Role.ADMIN, Role.DPO)
 
 
 def _filtrer(requete, action, entite, debut, fin):
@@ -112,3 +114,35 @@ def exporter(
         headers={"Content-Disposition":
                  f'attachment; filename="journal-{horodatage}.csv"'},
     )
+
+
+@router.get("/integrite", response_model=IntegriteOut)
+def integrite(db: Session = Depends(get_db), user: Utilisateur = Depends(AUDITEURS)):
+    """Recalcule la chaîne d'empreintes du journal et signale toute rupture."""
+    resultat = verifier_chaine(db)
+    journaliser(db, user, "INTEGRITE_VERIFIEE", "journal_audit",
+                valide=resultat["valide"], nb_anomalies=resultat["nb_anomalies"])
+    db.commit()
+    return resultat
+
+
+@router.get("/rapport")
+def rapport(
+    debut: date | None = None,
+    fin: date | None = None,
+    db: Session = Depends(get_db),
+    user: Utilisateur = Depends(AUDITEURS),
+):
+    """Rapport d'audit PDF : intégrité du journal, activité, politique en vigueur."""
+    entrees = db.scalars(_filtrer(select(JournalAudit), None, None, debut, fin)).all()
+    pdf = rapport_audit.generer(
+        integrite=verifier_chaine(db), entrees=entrees,
+        politique=controle_export.politique_active(db), debut=debut, fin=fin,
+        par=user.nom_complet, genere_le=datetime.now())
+    journaliser(db, user, "RAPPORT_AUDIT_GENERE", "journal_audit",
+                nb_entrees=len(entrees), debut=str(debut), fin=str(fin))
+    db.commit()
+    return Response(
+        content=pdf, media_type="application/pdf",
+        headers={"Content-Disposition":
+                 f'attachment; filename="rapport-audit-{datetime.now():%Y%m%d-%H%M}.pdf"'})

@@ -4,75 +4,75 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Medvault</title>
-<link rel="icon" href="assets/favicon.png">
+<link rel="icon" type="image/png" href="assets/bouclier.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="i18n.js?v=7"></script>
 <script>
 tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Charte : Feather White (fond) / Porcelaine Mist (cadres et
-        // champs) / Mulberry Kiss #8F1437 / Blue Reverie / Midnight
-        // Custard #146599 — ces deux derniers toujours en teinte pleine,
-        // jamais éclaircis en fond (sinon ça retombe sur du rose ou du bleu
-        // pâle) : les fonds « pâles » sont simplement Porcelaine Mist.
-        sable:      '#FAF9F6', // Feather White
-        carte:      '#FFFFFF',
-        encre:      '#0C3F5F', // Midnight Custard, assombri pour rester lisible en texte courant
-        indigo:     '#507593', // Blue Reverie
-        ardoise:    '#486E85', // Midnight Custard assombri, encore un peu plus clair qu'encre
-        trait:      '#E3EAED', // bordures, neutre très clair
-        corail:     '#8F1437', // Mulberry Kiss
-        corailfonce:'#0C3F5F', // Midnight Custard assombri
-        corailpale: '#F4F1EA', // Porcelaine Mist
-        lavande:    '#507593', // Blue Reverie
-        ciel:       '#507593', // Blue Reverie (teinte pleine, plus de pâle)
-        bleuetpale: '#F4F1EA', // Porcelaine Mist
-        vert:       '#507593', // Blue Reverie
-        vertpale:   '#F4F1EA', // Porcelaine Mist
-        brique:     '#8F1437', // Mulberry Kiss
-        briquepale: '#F4F1EA', // Porcelaine Mist
-        ambre:      '#0C3F5F', // Midnight Custard assombri
-        ambrepale:  '#F4F1EA', // Porcelaine Mist
-        porcelaine: '#F4F1EA', // Porcelaine Mist — champs de saisie, cadres de bouton
+        // Charte sobre : un bleu profond pour le texte et les actions, une
+        // teinte crevette en accent. Aucune autre couleur.
+        sable:      '#F6F8FB', // fond de page
+        carte:      '#FFFFFF', // cadres
+        encre:      '#1B2B44', // texte, bleu nuit
+        indigo:     '#2F5D8C', // bleu principal
+        ardoise:    '#5A6A80', // texte secondaire
+        trait:      '#DDE4ED', // bordures
+        corail:     '#D96A53', // crevette
+        corailfonce:'#B94B36', // crevette soutenu (liens, alertes)
+        corailpale: '#FDEFEA',
+        lavande:    '#2F5D8C',
+        ciel:       '#8FB4D9',
+        bleuetpale: '#EDF3FA',
+        vert:       '#2F5D8C', // « bon » = bleu
+        vertpale:   '#EDF3FA',
+        brique:     '#B94B36', // « refus / alerte » = crevette soutenu
+        briquepale: '#FDEFEA',
+        ambre:      '#5C7FA3', // « en cours » = bleu acier
+        ambrepale:  '#F0F4F9',
+        porcelaine: '#F1F5FA', // champs de saisie
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'monospace'],
       },
-      borderRadius: { xl: '14px', lg: '10px', '2xl': '20px' },
+      borderRadius: { xl: '12px', lg: '8px', '2xl': '16px' },
     },
   },
 };
 </script>
 <style>
-  body { background: #FAF9F6; }
-  :focus-visible { outline: 2px solid #8F1437; outline-offset: 2px; }
+  body { background: #F6F8FB; }
+  :focus-visible { outline: 2px solid #2F5D8C; outline-offset: 2px; }
 
-  /* Ruban de marque : le dégradé du bouclier */
-  .ruban { background: linear-gradient(90deg, #8F1437 0%, #507593 55%, #146599 100%); }
+  /* Filet d'accent, plat */
+  .ruban { background: #D96A53; }
+  .ligne-entete { background: linear-gradient(90deg, #2F5D8C 0%, #2F5D8C 60%, #D96A53 100%); }
 
-  /* Jauges (population hospitalisée, répartitions) : un dégradé monochrome
-     et clair plutôt que le ruban tricolore, pour rester lisible en petite taille. */
-  .jauge { background: linear-gradient(90deg, #F7EDB6 0%, #BEB06C 100%); }
-
-  /* Formes diffuses de la page d'accueil, reprises de la charte */
-  /* Opacité volontairement élevée : en dessous, le Mulberry et le Blue
-     Reverie s'éclaircissent trop sur le fond clair et tournent au rose et
-     au bleu pâle plutôt que de rester reconnaissables. */
-  .halo { position: absolute; border-radius: 9999px; filter: blur(46px); opacity: .85; }
-
-  /* Le panneau de marque a un fond texturé (photo) en mode clair : le texte
-     y est assombri spécifiquement pour rester lisible par-dessus, plus que
-     le encre/ardoise standard du reste du site. En mode sombre, les règles
-     plus bas (html.dark .text-encre / .text-ardoise, en !important)
-     reprennent la main. */
-  #panneau-marque { color: #06263B; }
-  #panneau-marque .text-ardoise { color: #184A63; }
+  /* Électrocardiogramme : un battement se répète dans l'espace libre de l'en-tête,
+     sur la ligne continue. Le motif a la même hauteur que la ligne : sa base
+     est confondue avec elle. */
+  .slogan { letter-spacing: .24em; font-weight: 500; line-height: 1.2; }
+  /* Mot « Medvault » : relevé de teinte en mode sombre pour rester lisible. */
+  html.dark .mot-marque { filter: brightness(1.75) saturate(.85); }
+  .ecg {
+    height: 32px; background-repeat: repeat-x; background-position: 0 center;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='32'%20viewBox='0%200%20320%2032'%3E%3Cpath%20d='M0%2016H44l4-5%204%205h6l3%205%205-20%206%2028%204-13h6l4-6%205%206H320'%20fill='none'%20stroke='%232F5D8C'%20stroke-width='2'%20stroke-linejoin='round'%20stroke-linecap='round'/%3E%3C/svg%3E");
+    animation: defiler-ecg 14s linear infinite;
+    /* le tracé s'estompe à droite et laisse place à la ligne : pas de rupture de teinte */
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0%, #000 55%, transparent 100%);
+  }
+  html.dark .ecg { background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='32'%20viewBox='0%200%20320%2032'%3E%3Cpath%20d='M0%2016H44l4-5%204%205h6l3%205%205-20%206%2028%204-13h6l4-6%205%206H320'%20fill='none'%20stroke='%238DB6E0'%20stroke-width='2'%20stroke-linejoin='round'%20stroke-linecap='round'/%3E%3C/svg%3E"); }
+  @keyframes defiler-ecg { to { background-position-x: -320px; } }
+  /* Jauges : un aplat bleu */
+  .jauge { background: #2F5D8C; }
 
   .tampon {
     border: 2px solid currentColor;
@@ -81,7 +81,6 @@ tailwind.config = {
     border-radius: 6px;
     padding: 10px 20px 8px;
   }
-
   /* Le tampon « s'abat » sur le dossier au moment où l'accès est accordé. */
   .tampon-anime { animation: abattre-tampon .55s cubic-bezier(.17,1.5,.4,1) both; }
   @keyframes abattre-tampon {
@@ -90,155 +89,112 @@ tailwind.config = {
     100% { transform: scale(1) rotate(-1.5deg); opacity: 1; }
   }
 
-  .rangee { border-bottom: 1px solid #E3EAED; }
+  .rangee { border-bottom: 1px solid #E8EDF3; }
   .rangee:last-child { border-bottom: 0; }
 
   table { border-collapse: collapse; }
   .defil::-webkit-scrollbar { height: 6px; }
-  .defil::-webkit-scrollbar-thumb { background: #C7D8E2; border-radius: 9999px; }
-
-  /* La ligne se trace une fois au chargement, segment après segment,
-     de la gauche vers la droite. */
-  .trace { stroke-dasharray: 220; stroke-dashoffset: 220;
-           animation: tracer .34s linear forwards; }
-  @keyframes tracer { to { stroke-dashoffset: 0; } }
-
-  .plate { transform: scaleX(0); transform-origin: left center;
-           animation: etaler .34s linear forwards; }
-  .plate.flex-1 { animation-duration: .66s; }
-  @keyframes etaler { to { transform: scaleX(1); } }
+  .defil::-webkit-scrollbar-thumb { background: #CBD6E3; border-radius: 9999px; }
 
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
-    .trace { animation: none; stroke-dashoffset: 0; }
-    .plate { animation: none; transform: none; }
     .tampon-anime { animation: none; }
+    .ecg { animation: none; }
   }
 
   /* ---------------- Mode sombre ----------------
-     La charte repose sur des couleurs nommées (sable, carte, encre...)
-     compilées par Tailwind en classes figées : on les repeint ici plutôt
-     que de dupliquer chaque balisage avec des variantes dark:. */
-  /* Tous les textes courants passent en blanc pur sur fond sombre. Les
-     couleurs sémantiques des badges (vert/brique/ambre...) ne sont pas
-     concernées : elles portent un sens (statut, catégorie), pas juste du
-     texte courant. */
-  html.dark body { background: #0C4062; color: #FFFFFF; }
-  html.dark .bg-sable { background-color: #0F5480 !important; }
-  /* Les cadres (cartes) reprennent exactement la couleur du bandeau
-     horizontal du haut de page. */
-  html.dark .bg-carte { background-color: #0E4A71 !important; }
-  html.dark [class*="bg-sable\/"] { background-color: #0F5480 !important; }
-  html.dark [class*="bg-carte\/"] { background-color: rgba(14,74,113,.85) !important; }
-  html.dark .border-trait, html.dark [class*="border-trait"] { border-color: #5992B6 !important; }
-  html.dark .text-encre { color: #FFFFFF !important; }
-  html.dark .text-ardoise { color: #FFFFFF !important; }
-  html.dark .text-ardoise\/80, html.dark .text-ardoise\/90 { color: #FFFFFF !important; }
-  html.dark .rangee { border-color: #0E4F79; }
-  html.dark .halo { opacity: .55; }
-  html.dark input, html.dark select, html.dark textarea {
-    background-color: #105988 !important; color: #E8E1D6; border-color: #5992B6 !important;
+     Les couleurs nommées (sable, carte, encre...) sont compilées par Tailwind
+     en classes figées : on les repeint ici plutôt que de dupliquer le
+     balisage avec des variantes dark:. Les sélecteurs par sous-chaîne
+     captent aussi les variantes d'opacité (text-vert/80...). */
+  html.dark body { background: #0E1A2B; color: #F2F5F9; }
+  html.dark .bg-sable, html.dark [class*="bg-sable\/"] { background-color: #0E1A2B !important; }
+  html.dark .bg-carte { background-color: #15263D !important; }
+  html.dark [class*="bg-carte\/"] { background-color: rgba(21,38,61,.85) !important; }
+  html.dark .border-trait, html.dark [class*="border-trait"] { border-color: #2B3E58 !important; }
+  html.dark .text-encre { color: #F2F5F9 !important; }
+  html.dark .text-ardoise, html.dark [class*="text-ardoise"] { color: #AEBCCF !important; }
+  html.dark .rangee { border-color: #223550; }
+  html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  html.dark select, html.dark textarea {
+    background-color: #1B2F4A !important; color: #F2F5F9; border-color: #34496A !important;
   }
   html.dark .onglet.text-encre { color: #FFFFFF !important; }
-  html.dark table thead.bg-sable { background-color: #0F5480 !important; }
-  /* Mêmes fonds neutres qu'en clair, assombris : aucun des badges n'est
-     teinté de rose ou de bleu, seuls le texte et la bordure portent la
-     couleur sémantique. */
-  html.dark .bg-vertpale,
-  html.dark .bg-briquepale,
-  html.dark .bg-ambrepale,
-  html.dark .bg-bleuetpale,
-  html.dark .bg-corailpale,
-  html.dark .bg-porcelaine,
-  html.dark [class*="bg-porcelaine"] { background-color: #0F5480 !important; }
-  /* Le Mulberry, le Blue Reverie et le Midnight Custard en teinte pleine ne
-     se voient quasiment plus sur un fond sombre (contraste < 2:1) : on les
-     éclaircit nettement pour le texte, les bordures et les pastilles. */
-  /* Sélecteurs par sous-chaîne plutôt que classes exactes : capture aussi
-     les variantes d'opacité (text-vert/80, text-brique/90...), que Tailwind
-     traite comme des noms de classe à part entière. */
-  html.dark [class*="text-vert"], html.dark [class*="text-lavande"], html.dark [class*="text-indigo"] { color: #8DA5B9 !important; }
-  html.dark [class*="text-brique"], html.dark [class*="text-corail"] { color: #D38CA0 !important; }
-  html.dark [class*="text-ambre"] { color: #72A3C2 !important; }
-  /* corailfonce (Midnight Custard assombri) n'était jamais repeint : les
-     pastilles numérotées (bg-corailpale + text-corailfonce) et les survols
-     « hover:text-corailfonce » devenaient quasi invisibles sur fond sombre. */
-  html.dark .text-corailfonce, html.dark [class*="text-corailfonce"] { color: #D38CA0 !important; }
-  html.dark .bg-corailfonce, html.dark [class*="bg-corailfonce"] { background-color: #126397 !important; }
-  /* encre en bordure ou en fond plein (badge « Soumise », notifications
-     courantes) : même sort que le reste de la famille Midnight Custard. */
-  html.dark [class*="border-encre"] { border-color: #8DA5B9 !important; }
-  html.dark .bg-encre, html.dark [class*="bg-encre"] { background-color: #126397 !important; }
-  html.dark [class*="border-vert"], html.dark [class*="border-lavande"] { border-color: #8DA5B9 !important; }
-  html.dark [class*="border-brique"], html.dark [class*="border-corail"] { border-color: #D38CA0 !important; }
-  html.dark [class*="border-ambre"] { border-color: #72A3C2 !important; }
-  html.dark .tampon { box-shadow: inset 0 0 0 1px #0C4062, inset 0 0 0 3px currentColor; }
-  /* Pastilles de catégorie, mode sombre : seules « donnée médicale » et
-     « donnée administrative » sont redéfinies, avec deux teintes choisies
-     pour rester bien distinctes l'une de l'autre et lisibles sur le fond
-     bleu. */
-  html.dark .pastille-sante { background: #2DD4BF !important; }
-  html.dark .pastille-admin { background: #F2A341 !important; }
+  html.dark table thead.bg-sable { background-color: #1B2F4A !important; }
+  html.dark .bg-vertpale, html.dark .bg-briquepale, html.dark .bg-ambrepale,
+  html.dark .bg-bleuetpale, html.dark .bg-corailpale,
+  html.dark .bg-porcelaine, html.dark [class*="bg-porcelaine"] { background-color: #1B2F4A !important; }
+  html.dark [class*="text-vert"], html.dark [class*="text-lavande"], html.dark [class*="text-indigo"] { color: #8DB6E0 !important; }
+  html.dark [class*="text-brique"], html.dark [class*="text-corail"] { color: #F2A596 !important; }
+  html.dark [class*="text-ambre"] { color: #A3BEDB !important; }
+  html.dark .bg-corailfonce, html.dark [class*="bg-corailfonce"] { background-color: #B94B36 !important; }
+  html.dark .bg-encre, html.dark [class*="bg-encre"] { background-color: #2F5D8C !important; }
+  html.dark [class*="border-encre"] { border-color: #8DB6E0 !important; }
+  html.dark [class*="border-vert"], html.dark [class*="border-lavande"] { border-color: #8DB6E0 !important; }
+  html.dark [class*="border-brique"], html.dark [class*="border-corail"] { border-color: #F2A596 !important; }
+  html.dark [class*="border-ambre"] { border-color: #A3BEDB !important; }
+  html.dark .tampon { box-shadow: inset 0 0 0 1px #0E1A2B, inset 0 0 0 3px currentColor; }
+  html.dark .bouton-connexion { background-color: #3C6EA3 !important; }
+  html.dark .bouton-connexion:hover { background-color: #4B80B8 !important; }
 
-  /* Interrupteur mode sombre : un rail avec un curseur qui glisse du soleil
-     vers la lune, plutôt qu'une simple icône qui change. */
+  /* Sélecteur de langue */
+  .selecteur-langue {
+    height: 24px; border: 1px solid #DDE4ED; border-radius: 7px; background: #FFFFFF;
+    padding: 0 4px; font-size: 11px; font-weight: 600; color: #5A6A80; cursor: pointer;
+  }
+  .selecteur-langue:hover { border-color: #2F5D8C; }
+
+  /* Langues écrites de droite à gauche (arabe) : les marges et alignements
+     posés par Tailwind en « gauche/droite » sont inversés ici. */
+  html[dir="rtl"] .text-left { text-align: right; }
+  html[dir="rtl"] .text-right { text-align: left; }
+  html[dir="rtl"] .ml-2 { margin-left: 0; margin-right: .5rem; }
+  html[dir="rtl"] .ml-3 { margin-left: 0; margin-right: .75rem; }
+  html[dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
+  html[dir="rtl"] .mr-2 { margin-right: 0; margin-left: .5rem; }
+  html[dir="rtl"] .interrupteur-sombre.absolute { right: auto; left: 1.25rem; }
+  html[dir="rtl"] .selecteur-langue.absolute { right: auto; left: 74px; }
+  html[dir="rtl"] .border-l-2 { border-left-width: 0; border-right-width: 2px; }
+  html[dir="rtl"] .lg\:border-l { border-left-width: 0; border-right-width: 1px; }
+
+
+  /* En-tête : langue, thème et déconnexion de même hauteur, espacés à égalité */
+  header .selecteur-langue, header .interrupteur-sombre .rail, #btn-deconnexion { height: 30px; box-sizing: border-box; }
+  header .interrupteur-sombre .rail { width: 54px; padding: 0 7.5px; }
+  header .interrupteur-sombre .curseur { top: 3px; left: 3px; width: 22px; height: 22px; }
+  html.dark header .interrupteur-sombre .curseur { transform: translateX(24px); }
+  header .interrupteur-sombre .rail svg { width: 13px; height: 13px; }
+  header .selecteur-langue { padding: 0 8px; font-size: 12px; border-radius: 8px; }
+  #btn-deconnexion { display: inline-flex; align-items: center; padding: 0 14px; border-radius: 8px; }
+  /* Interrupteur clair / sombre */
   .interrupteur-sombre { background: none; border: 0; padding: 0; cursor: pointer; line-height: 0; }
   .interrupteur-sombre .rail {
     position: relative; display: flex; align-items: center; justify-content: space-between;
-    width: 60px; height: 30px; border-radius: 9999px; padding: 0 7px;
-    background: linear-gradient(90deg, #F4F1EA 0%, #E3EAED 100%);
-    border: 1px solid #E3EAED; transition: background .35s, border-color .35s;
+    width: 46px; height: 24px; border-radius: 9999px; padding: 0 5.5px;
+    background: #EDF3FA; border: 1px solid #DDE4ED; transition: background .3s, border-color .3s;
   }
-  .interrupteur-sombre .rail svg { position: relative; z-index: 1; width: 14px; height: 14px; }
-  .interrupteur-sombre .icone-soleil { color: #8F1437; }
-  .interrupteur-sombre .icone-lune { color: #3077A4; }
+  .interrupteur-sombre .rail svg { position: relative; z-index: 1; width: 11px; height: 11px; }
+  .interrupteur-sombre .icone-soleil { color: #B94B36; }
+  .interrupteur-sombre .icone-lune { color: #2F5D8C; }
   .interrupteur-sombre .curseur {
-    position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 3px rgba(2,46,74,.35);
-    transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(27,43,68,.3);
+    transition: transform .3s cubic-bezier(.4, 0, .2, 1);
   }
-  .interrupteur-sombre:hover .rail { border-color: #8F1437; }
-  html.dark .interrupteur-sombre .rail {
-    background: linear-gradient(90deg, #0E4A71 0%, #126397 100%); border-color: #5992B6;
-  }
-  html.dark .interrupteur-sombre .curseur { transform: translateX(30px); background: #0F5480; }
-  /* Interrupteur mode sombre/mode clair : blanc dans les deux positions. */
-  html.dark .interrupteur-sombre .icone-lune,
-  html.dark .interrupteur-sombre .icone-soleil { color: #FFFFFF; }
-  html:not(.dark) .interrupteur-sombre .icone-lune,
-  html.dark .interrupteur-sombre .icone-soleil { opacity: .45; }
+  .interrupteur-sombre:hover .rail { border-color: #2F5D8C; }
+  html.dark .interrupteur-sombre .rail { background: #1B2F4A; border-color: #34496A; }
+  html.dark .interrupteur-sombre .curseur { transform: translateX(22px); background: #2F5D8C; }
+  html.dark .interrupteur-sombre .icone-lune, html.dark .interrupteur-sombre .icone-soleil { color: #FFFFFF; }
+  html:not(.dark) .interrupteur-sombre .icone-lune, html.dark .interrupteur-sombre .icone-soleil { opacity: .5; }
 
-  /* Panneau de marque, mode clair uniquement : le texte secondaire (gris
-     ardoise) se lit mal sur la photo de fond, on l'assombrit juste ici. */
-  html:not(.dark) #panneau-marque .text-ardoise { color: #04121E !important; }
-
-  /* Panneau de marque, mode sombre uniquement : une seconde photo (papier
-     bleu) plutôt que la version claire, et les trois ronds diffus repeints
-     en teintes claires pour rester visibles sur ce fond. */
-  html.dark #panneau-marque {
-    background: #0C4062 url('assets/fond-connexion-sombre.jpg') center/cover no-repeat !important;
-  }
-  html.dark #panneau-marque .halo-1 { background: #F4F1EA !important; }
-  html.dark #panneau-marque .halo-2 { background: #BEE3F2 !important; }
-  html.dark #panneau-marque .halo-3 { background: #F7EDB6 !important; }
-  /* Seul le grand titre reste en Porcelaine Mist ; tout le reste du panneau
-     (texte, chiffres, rôles) passe en blanc via la règle générale ci-dessus. */
-  html.dark #panneau-marque h1 { color: #F4F1EA !important; }
-
-  /* Boutons de soumission du formulaire de connexion, mode sombre : alignés
-     sur la couleur du bandeau/cadre plutôt que sur le Blue Reverie plein,
-     pour matcher l'onglet « Connexion » actif (lui-même en bg-carte). */
-  html.dark #ecran-connexion .bouton-connexion { background-color: #0E4A71 !important; }
-  html.dark #ecran-connexion .bouton-connexion:hover { background-color: #126397 !important; }
-
-  /* Carte des établissements : fond du SVG (posé en style inline) repeint. */
-  html.dark #carte-svg { background: #0F5480 !important; }
-  html.dark #carte-svg rect[fill="#F4F1EA"] { fill: #0F5480; }
-  html.dark #carte-svg text[fill="#507593"] { fill: #8DA5B9; }
-  html.dark #carte-svg line { stroke: #5992B6; }
-  html.dark #carte-svg rect[fill="#F4F1EA"] { fill: #0F5480; }
-  html.dark #carte-svg text[fill="#507593"] { fill: #8DA5B9; }
-  html.dark #carte-svg line { stroke: #5992B6; }
+  /* Tableau de bord */
+  .db-piste { background: #EDF3FA; }
+  .db-barre { background: #2F5D8C; transition: width .25s ease, height .25s ease; }
+  .db-barre.sel { background: #D96A53; }
+  .db-ligne:hover .db-barre { background: #D96A53; }
+  html.dark .db-piste { background: #1B2F4A; }
+  html.dark .db-barre { background: #8DB6E0; }
+  html.dark .db-barre.sel, html.dark .db-ligne:hover .db-barre { background: #D96A53; }
 </style>
 </head>
 <body class="font-sans text-encre antialiased">
@@ -250,14 +206,9 @@ tailwind.config = {
 <div id="ecran-connexion" class="min-h-screen lg:h-screen lg:overflow-hidden grid lg:grid-cols-[1fr_460px]">
 
   <!-- Panneau de marque -->
-  <div id="panneau-marque" class="hidden lg:flex relative overflow-hidden px-14 xl:px-20 py-12 flex-col justify-center"
-       style="background:#FAF9F6 url('assets/fond-connexion.jpg') center/cover no-repeat">
-    <div class="halo halo-1" style="width:440px;height:440px;background:#8F1437;top:-130px;left:-110px"></div>
-    <div class="halo halo-2" style="width:340px;height:340px;background:#507593;bottom:-60px;left:34%"></div>
-    <div class="halo halo-3" style="width:260px;height:260px;background:#146599;top:52%;left:-70px"></div>
-
+  <div id="panneau-marque" class="hidden lg:flex relative overflow-hidden px-14 xl:px-20 py-12 flex-col justify-center bg-sable">
     <div class="relative max-w-xl">
-      <img src="assets/logo.png" alt="Medvault" class="logo-marque h-[76px] w-auto">
+      <span class="flex items-center gap-4"><img src="assets/bouclier.png" alt="" class="h-[68px] w-auto shrink-0 block"><span class="flex flex-col"><img src="assets/medvault-texte.png" alt="Medvault" class="mot-marque h-6 w-auto self-start relative top-1"><span class="slogan uppercase text-ardoise text-[10.5px] mt-2.5">Votre coffre-fort de données médicales</span></span></span>
 
       <h1 class="text-[2.4rem] xl:text-[2.8rem] font-extrabold leading-[1.08] tracking-tight mt-9">
         L'accès aux données de santé,<br>encadré de bout en bout.
@@ -268,15 +219,15 @@ tailwind.config = {
       </p>
 
       <div class="mt-9 grid grid-cols-3 gap-3.5 max-w-lg">
-        <div class="bg-carte/75 backdrop-blur rounded-xl border border-white/70 px-4 py-3.5">
+        <div class="bg-carte rounded-xl border border-trait px-4 py-3.5">
           <p class="text-2xl font-extrabold tracking-tight">8</p>
           <p class="text-xs text-ardoise mt-1.5 leading-snug">règles vérifiées avant toute transmission</p>
         </div>
-        <div class="bg-carte/75 backdrop-blur rounded-xl border border-white/70 px-4 py-3.5">
+        <div class="bg-carte rounded-xl border border-trait px-4 py-3.5">
           <p class="text-2xl font-extrabold tracking-tight">3</p>
           <p class="text-xs text-ardoise mt-1.5 leading-snug">contrôles successifs, du dépôt à la décision</p>
         </div>
-        <div class="bg-carte/75 backdrop-blur rounded-xl border border-white/70 px-4 py-3.5">
+        <div class="bg-carte rounded-xl border border-trait px-4 py-3.5">
           <p class="text-2xl font-extrabold tracking-tight">0</p>
           <p class="text-xs text-ardoise mt-1.5 leading-snug">nom de patient stocké dans la base</p>
         </div>
@@ -300,9 +251,10 @@ tailwind.config = {
   </div>
 
   <!-- Colonne de connexion -->
-  <div class="relative bg-sable lg:border-l border-trait flex flex-col justify-center px-7 sm:px-11 py-12 overflow-y-auto">
+  <div class="relative bg-carte lg:border-l border-trait flex flex-col justify-center px-7 sm:px-11 py-12 overflow-y-auto">
     <div class="ruban absolute inset-x-0 top-0 h-1.5"></div>
 
+    <select data-selecteur-langue aria-label="Langue" class="selecteur-langue absolute top-5 right-[74px]"></select>
     <button id="interrupteur-theme-connexion" type="button" aria-label="Changer d'apparence" aria-pressed="false"
             class="interrupteur-sombre absolute top-5 right-5">
       <span class="rail">
@@ -312,8 +264,8 @@ tailwind.config = {
       </span>
     </button>
 
-    <div class="w-full max-w-[340px] mx-auto">
-      <img src="assets/logo.png" alt="Medvault" class="logo-marque h-14 w-auto lg:hidden mb-7">
+    <div class="w-full max-w-[340px] mx-auto pt-[84px]">
+      <p class="lg:hidden mt-6 mb-7"><span class="flex items-center gap-3"><img src="assets/bouclier.png" alt="" class="h-12 w-auto shrink-0 block"><span class="flex flex-col"><img src="assets/medvault-texte.png" alt="Medvault" class="mot-marque h-4 w-auto self-start relative top-1"><span class="slogan uppercase text-ardoise text-[8.5px] mt-1.5">Votre coffre-fort de données médicales</span></span></span></p>
 
       <div class="flex gap-1 bg-porcelaine rounded-lg p-1" role="tablist">
         <button id="onglet-connexion" role="tab" aria-selected="true"
@@ -396,7 +348,7 @@ tailwind.config = {
                    class="w-full rounded-lg border border-trait px-3.5 py-2.5 text-sm bg-porcelaine">
           </div>
           <label class="flex items-start gap-2 text-xs text-ardoise leading-snug">
-            <input id="i-engagement" type="checkbox" required class="mt-0.5 accent-[#507593]">
+            <input id="i-engagement" type="checkbox" required class="mt-0.5 accent-[#2F5D8C]">
             Je m'engage à n'utiliser les données obtenues que pour la finalité déclarée
             dans chacune de mes demandes.
           </label>
@@ -421,48 +373,24 @@ tailwind.config = {
     <!-- La ligne est composée de segments réels : chacun commence et s'arrête
          exactement au bord de son voisin, et la portion finale traverse le
          bloc du compte connecté, entre le nom et le rôle. -->
-    <div class="pl-4 pr-5 lg:pl-5 lg:pr-8 h-[96px] flex items-center">
-
-      <span class="plate bg-corail h-[3px] w-4 shrink-0 rounded-l-full" style="animation-delay:0s;animation-duration:.18s"></span>
-
-      <img src="assets/logo.png" alt="Medvault" class="logo-marque h-[58px] w-auto shrink-0 block">
-
-      <svg class="shrink-0 h-10 w-[116px] block" viewBox="0 0 116 40" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="pic-gauche" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#8F1437"/><stop offset="100%" stop-color="#507593"/>
-          </linearGradient>
-        </defs>
-        <path class="trace" style="animation-delay:.18s"
-              d="M0 20 H30 L38 27 L48 4 L58 36 L68 20 H116"
-              fill="none" stroke="url(#pic-gauche)" stroke-width="3"
-              stroke-linecap="round" stroke-linejoin="miter"/>
-      </svg>
-
-      <span class="plate flex-1 min-w-[16px] h-[3px]" style="animation-delay:.52s;
-            background:linear-gradient(90deg,#507593 0%,#507593 22%,#146599 78%,#146599 100%)"></span>
-
-      <svg class="shrink-0 h-10 w-[116px] block" viewBox="0 0 116 40" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="pic-droit" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#507593"/><stop offset="100%" stop-color="#146599"/>
-          </linearGradient>
-        </defs>
-        <path class="trace" style="animation-delay:1.18s"
-              d="M0 20 H30 L38 27 L48 4 L58 36 L68 20 H116"
-              fill="none" stroke="url(#pic-droit)" stroke-width="3"
-              stroke-linecap="round" stroke-linejoin="miter"/>
-      </svg>
+    <div class="relative pr-5 lg:pr-8 h-16 flex items-center">
+      <!-- Une seule ligne continue, de part en part, à hauteur constante :
+           logo, boutons et carte du compte (opaques) passent devant, le nom
+           et le rôle se placent de chaque côté. -->
+      <span class="ligne-entete absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px]"></span>
+      <div class="relative z-10 bg-carte pl-4 lg:pl-5 pr-4 flex items-center">
+        <span class="flex items-center gap-2.5"><img src="assets/bouclier.png" alt="" class="h-[44px] w-auto shrink-0 block"><span class="flex flex-col"><img src="assets/medvault-texte.png" alt="Medvault" class="mot-marque h-[14px] w-auto self-start relative top-0.5"><span class="slogan uppercase text-ardoise text-[7.5px] mt-1">Votre coffre-fort de données médicales</span></span></span>
+      </div>
+      <span class="ecg flex-1 relative z-0 mx-2"></span>
 
       <div class="relative shrink-0 hidden sm:block text-right px-3.5">
-        <span class="plate absolute inset-x-0 top-1/2 -translate-y-1/2 h-[3px] bg-[#146599]"
-              style="animation-delay:1.5s"></span>
-        <p id="identite" class="relative text-sm font-semibold leading-none mb-[11px]"></p>
-        <p id="badge-role" class="relative text-xs text-ardoise leading-none mt-[11px]"></p>
+        <p id="identite" class="relative text-sm font-semibold leading-none pb-1.5"></p>
+        <p id="badge-role" class="relative text-xs text-ardoise leading-none pt-2"></p>
       </div>
 
+      <select data-selecteur-langue aria-label="Langue" class="selecteur-langue ml-3 shrink-0 relative z-10"></select>
       <button id="interrupteur-theme" type="button" aria-label="Changer d'apparence" aria-pressed="false"
-              class="interrupteur-sombre ml-4 shrink-0">
+              class="interrupteur-sombre ml-3 shrink-0 relative z-10">
         <span class="rail">
           <svg class="icone-soleil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           <svg class="icone-lune" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
@@ -471,7 +399,7 @@ tailwind.config = {
       </button>
 
       <button id="btn-deconnexion"
-              class="ml-2 shrink-0 rounded-lg border border-trait px-3 py-1.5 text-xs font-semibold text-ardoise hover:border-corail hover:text-corailfonce transition-colors">
+              class="ml-3 shrink-0 relative z-10 bg-carte rounded-lg border border-trait text-xs font-semibold text-ardoise hover:border-corail hover:text-corailfonce transition-colors">
         Se déconnecter
       </button>
     </div>
@@ -646,7 +574,6 @@ tailwind.config = {
           <div id="bloc-hopitaux" class="hidden mt-6 bg-carte rounded-xl border border-trait px-5 py-4">
             <div class="flex items-baseline justify-between gap-3">
               <p class="text-sm font-semibold">Zone géographique ou établissements</p>
-              <button type="button" data-aller="carte" class="aller text-xs font-semibold text-corailfonce hover:underline">Voir la carte</button>
             </div>
             <p class="text-xs text-ardoise mt-1 leading-relaxed">
               Aucun établissement coché = tout le territoire couvert par ce lot. Cochez une
@@ -740,47 +667,34 @@ tailwind.config = {
     <section data-vue="catalogue" class="vue hidden">
       <h2 class="text-2xl font-bold tracking-tight">Catalogue des données</h2>
       <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
-        Les séjours hospitaliers (tous services), les indicateurs territoriaux par
-        établissement, et des référentiels publics sans aucun patient concerné.
-        Pour chaque colonne, ce que vous recevrez par défaut si vous la demandez.
+        Le catalogue liste les jeux de données que vous pouvez demander. Pour chacun,
+        vous voyez les colonnes disponibles et ce que vous en recevrez réellement :
+        le délégué à la protection des données n'ouvre jamais d'identité de patient.
       </p>
-      <div id="legende-categories" class="mt-6 flex flex-wrap gap-2.5"></div>
+
+      <ol class="mt-5 grid sm:grid-cols-3 gap-3 text-sm">
+        <li class="bg-carte rounded-xl border border-trait px-4 py-3.5 leading-snug">1. Choisissez un jeu de données dans la liste</li>
+        <li class="bg-carte rounded-xl border border-trait px-4 py-3.5 leading-snug">2. Déposez une demande, le délégué l'examine</li>
+        <li class="bg-carte rounded-xl border border-trait px-4 py-3.5 leading-snug">3. Une fois validée, consultez les données dans Extraction et Tableau de bord</li>
+      </ol>
+
+      <h3 class="mt-8 text-sm font-semibold">Comment lire les pastilles</h3>
+      <p class="text-xs text-ardoise mt-1 max-w-2xl leading-relaxed">
+        Chaque colonne porte une pastille : elle indique si la donnée est sensible, et sous quelle forme vous la recevrez.
+      </p>
+      <div id="legende-categories" class="mt-4 flex flex-wrap gap-2.5"></div>
       <div id="liste-lots" class="mt-6 grid lg:grid-cols-2 gap-6 items-start"></div>
     </section>
 
-    <!-- ---------- Carte des établissements ---------- -->
-    <section data-vue="carte" class="vue hidden">
-      <h2 class="text-2xl font-bold tracking-tight">Carte des établissements</h2>
+    <!-- ---------- Tableau de bord du chercheur ---------- -->
+    <section data-vue="dashboard" class="vue hidden">
+      <h2 class="text-2xl font-bold tracking-tight">Tableau de bord</h2>
       <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
-        Indicateurs territoriaux par établissement, à la manière d'un observatoire
-        régional de santé. Données synthétiques, déjà agrégées.
+        Vos données autorisées en un coup d'œil. Cliquez sur une barre pour filtrer
+        les autres graphiques.
       </p>
-
-      <div class="mt-6 flex flex-wrap items-end gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-ardoise mb-1.5" for="carte-indicateur">Indicateur</label>
-          <select id="carte-indicateur" class="rounded-lg border border-trait bg-carte px-3 py-2 text-sm">
-            <option value="taux_hospitalisation">Taux d'hospitalisation</option>
-            <option value="hospitalisations_covid">Hospitalisations COVID-19</option>
-            <option value="taux_mortalite">Taux de mortalité</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-ardoise mb-1.5" for="carte-annee">Année</label>
-          <select id="carte-annee" class="rounded-lg border border-trait bg-carte px-3 py-2 text-sm"></select>
-        </div>
-      </div>
-
-      <div class="mt-6 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
-        <div class="bg-carte rounded-2xl border border-trait overflow-hidden">
-          <svg id="carte-svg" viewBox="0 0 600 560" class="w-full h-auto select-none" style="background:#F4F1EA"></svg>
-          <div class="px-5 py-3.5 border-t border-trait flex items-center justify-between gap-4 flex-wrap">
-            <span class="text-xs text-ardoise">La taille d'un point suit le bassin de population ; sa couleur, le niveau de l'indicateur choisi.</span>
-            <div id="carte-echelle" class="flex items-center gap-1.5 text-xs"></div>
-          </div>
-        </div>
-        <aside id="carte-detail" class="bg-carte rounded-xl border border-trait overflow-hidden lg:sticky lg:top-[162px]"></aside>
-      </div>
+      <div id="db-choix" class="mt-5 flex flex-wrap gap-2"></div>
+      <div id="db-contenu" class="mt-6"></div>
     </section>
 
     <!-- ---------- Import de données (délégué) ---------- -->
@@ -830,6 +744,60 @@ tailwind.config = {
       <div id="liste-imports" class="mt-3 bg-carte rounded-xl border border-trait overflow-hidden"></div>
     </section>
 
+    <!-- ---------- Politiques de confidentialité (délégué) ---------- -->
+    <section data-vue="politiques" class="vue hidden">
+      <h2 class="text-2xl font-bold tracking-tight">Politiques de confidentialité</h2>
+      <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
+        Des règles réutilisables, appliquées à chaque extraction avant qu'elle
+        ne sorte : taille minimale des groupes de personnes indiscernables
+        (k-anonymat) et action à mener quand le seuil n'est pas atteint. Une
+        seule politique est active à la fois.
+      </p>
+
+      <form id="form-politique" class="mt-6 bg-carte rounded-xl border border-trait overflow-hidden">
+        <div class="rangee px-5 py-4 grid sm:grid-cols-[170px_1fr] gap-2.5 items-center">
+          <label class="text-xs font-semibold text-ardoise" for="pol-nom">Nom de la politique</label>
+          <input id="pol-nom" required minlength="3" maxlength="120" placeholder="Standard recherche, seuil 5"
+                 class="w-full rounded-lg border border-trait px-3 py-2 text-sm bg-porcelaine">
+        </div>
+        <div class="rangee px-5 py-4 grid sm:grid-cols-[170px_1fr] gap-2.5">
+          <label class="text-xs font-semibold text-ardoise pt-2" for="pol-description">Description</label>
+          <textarea id="pol-description" rows="2" maxlength="1000"
+                    class="w-full rounded-lg border border-trait px-3 py-2 text-sm leading-relaxed bg-porcelaine"
+                    placeholder="Quand l'utiliser, et pour quels jeux de données."></textarea>
+        </div>
+        <div class="rangee px-5 py-4 grid sm:grid-cols-[170px_1fr] gap-2.5 items-center">
+          <label class="text-xs font-semibold text-ardoise" for="pol-k">Taille minimale d'un groupe</label>
+          <input id="pol-k" type="number" min="2" max="50" value="5" required
+                 class="w-28 rounded-lg border border-trait px-3 py-2 text-sm bg-porcelaine">
+        </div>
+        <div class="rangee px-5 py-4 grid sm:grid-cols-[170px_1fr] gap-2.5 items-center">
+          <label class="text-xs font-semibold text-ardoise" for="pol-action">Si le seuil n'est pas atteint</label>
+          <select id="pol-action" class="w-full rounded-lg border border-trait px-3 py-2 text-sm bg-porcelaine">
+            <option value="AVERTIR">Avertir seulement</option>
+            <option value="SUPPRIMER">Retirer les petits groupes</option>
+            <option value="BLOQUER">Bloquer l'export</option>
+          </select>
+        </div>
+        <div class="rangee px-5 py-4 grid sm:grid-cols-[170px_1fr] gap-2.5 items-center">
+          <label class="text-xs font-semibold text-ardoise" for="pol-max">Lignes exportables (max.)</label>
+          <input id="pol-max" type="number" min="1" max="5000" placeholder="Sans limite"
+                 class="w-40 rounded-lg border border-trait px-3 py-2 text-sm bg-porcelaine">
+        </div>
+        <div class="px-5 py-4 flex items-center gap-3">
+          <button id="btn-politique" class="rounded-lg bg-corail hover:bg-corailfonce text-white px-5 py-2.5 text-sm font-semibold transition-colors">
+            Enregistrer la politique
+          </button>
+          <button type="button" id="btn-politique-annuler" class="hidden rounded-lg border border-trait px-4 py-2.5 text-sm font-semibold">
+            Annuler la modification
+          </button>
+        </div>
+      </form>
+
+      <h3 class="text-base font-semibold mt-9">Politiques existantes</h3>
+      <div id="liste-politiques" class="mt-3 bg-carte rounded-xl border border-trait overflow-hidden"></div>
+    </section>
+
     <!-- ---------- E-mails (administrateur) ---------- -->
     <section data-vue="mails" class="vue hidden">
       <h2 class="text-2xl font-bold tracking-tight">E-mails</h2>
@@ -873,6 +841,8 @@ tailwind.config = {
         </button>
       </div>
 
+      <div class="bloc-integrite mt-8"></div>
+
       <div id="synthese-indicateurs" class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
       <div id="synthese-repartitions" class="mt-9 max-w-xl"></div>
     </section>
@@ -906,6 +876,8 @@ tailwind.config = {
         <button id="btn-journal-json" class="rounded-lg border border-trait bg-carte px-3.5 py-2 text-sm font-semibold hover:border-corail transition-colors">JSON</button>
       </div>
 
+      <div class="bloc-integrite mt-6"></div>
+
       <p id="journal-compte" class="mt-5 text-xs text-ardoise"></p>
       <div id="liste-journal" class="mt-2 bg-carte rounded-xl border border-trait overflow-hidden"></div>
     </section>
@@ -915,8 +887,7 @@ tailwind.config = {
   <footer class="border-t border-trait bg-carte mt-10">
     <div class="pl-4 pr-5 lg:pl-5 lg:pr-8 py-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <img src="assets/marque.png" alt="" class="marque-filigrane h-8 w-auto opacity-70">
-        <p class="text-xs text-ardoise">
+                <p class="text-xs text-ardoise">
           Medvault, plateforme interne du CHU Sophia.<br>
           Données de démonstration entièrement synthétiques.
         </p>
@@ -928,6 +899,6 @@ tailwind.config = {
 
 <div id="notif" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm text-white shadow-lg z-50"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

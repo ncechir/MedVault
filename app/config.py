@@ -11,7 +11,18 @@ ALGORITHM = "HS256"
 DUREE_TOKEN_MINUTES = 60 * 8
 
 # --- Base de données ---
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./portail_sante.db")
+# Sous Windows, la base est gardée hors du dossier synchronisé (Google Drive /
+# OneDrive), qui la verrouille pendant la synchronisation ("database is locked").
+# L'ancien fichier backend/portail_sante.db n'est plus utilisé ; la base locale
+# est recréée avec les données de démonstration au premier lancement.
+_dossier_local = os.getenv("LOCALAPPDATA")
+if _dossier_local:
+    _dossier_local = os.path.join(_dossier_local, "MedVault")
+    os.makedirs(_dossier_local, exist_ok=True)
+    _base_par_defaut = "sqlite:///" + os.path.join(_dossier_local, "portail_sante.db").replace("\\", "/")
+else:
+    _base_par_defaut = "sqlite:///./portail_sante.db"
+DATABASE_URL = os.getenv("DATABASE_URL", _base_par_defaut)
 
 # --- Règles de gouvernance ---
 DUREE_ACCES_MAX_MOIS = 24        # durée de conservation maximale d'un accès

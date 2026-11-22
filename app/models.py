@@ -477,3 +477,31 @@ class JournalAudit(Base):
     entite: Mapped[str] = mapped_column(String(60))
     entite_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     details: Mapped[str] = mapped_column(Text, default="")
+    # Chaînage des entrées (V2) : empreinte SHA-256 de l'entrée, calculée à partir
+    # de l'empreinte de la précédente. Toute modification ou suppression d'une
+    # entrée intermédiaire rompt la chaîne et se détecte à la vérification.
+    # Nulles pour les entrées antérieures à l'introduction du chaînage.
+    empreinte_precedente: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    empreinte: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class PolitiqueDonnees(Base):
+    """Règles de confidentialité réutilisables, appliquées aux extractions (V2).
+
+    Une seule politique est « par défaut » : c'est elle qui s'applique à toute
+    extraction ou export. Le délégué en définit autant que nécessaire.
+    """
+    __tablename__ = "politique_donnees"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nom: Mapped[str] = mapped_column(String(120), unique=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    # Taille minimale d'un groupe d'individus indiscernables (k-anonymat)
+    k_min: Mapped[int] = mapped_column(Integer, default=5)
+    # AVERTIR : on signale. SUPPRIMER : les lignes des petits groupes sont retirées.
+    # BLOQUER : l'export est refusé tant que le seuil n'est pas atteint.
+    action: Mapped[str] = mapped_column(String(12), default="AVERTIR")
+    max_lignes_export: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    par_defaut: Mapped[bool] = mapped_column(Boolean, default=False)
+    cree_par_id: Mapped[int | None] = mapped_column(ForeignKey("utilisateur.id"), nullable=True)
+    cree_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)

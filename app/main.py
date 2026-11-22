@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, text
 
 from app import taches
 from app.config import PLANIFICATEUR_ACTIF, PLANIFICATEUR_HEURE, SEED_AUTO
@@ -13,7 +13,7 @@ from app.database import Base, SessionLocal, engine
 from app.models import Utilisateur
 from app.routers import (
     auth, autorisations, demandes, extractions, hopitaux, import_donnees, journal,
-    lots, mails, notifications, parametres, rapports, utilisateurs,
+    lots, mails, notifications, parametres, politiques, rapports, utilisateurs,
 )
 
 logger = logging.getLogger("medvault")
@@ -51,10 +51,48 @@ def _verifier_schema() -> None:
             )
 
 
+def _migrer_colonnes() -> None:
+    """Ajoute les colonnes de chaînage à un journal créé avant la V2."""
+    insp = inspect(engine)
+    if "journal_audit" not in insp.get_table_names():
+        return
+    existantes = {c["name"] for c in insp.get_columns("journal_audit")}
+    with engine.begin() as cx:
+        for nom in ("empreinte_precedente", "empreinte"):
+            if nom not in existantes:
+                cx.execute(text(f"ALTER TABLE journal_audit ADD COLUMN {nom} VARCHAR(64)"))
+
+
+def _restreindre_hopitaux() -> None:
+    """Prototype mono-établissement : ramène une base déjà peuplée à un seul
+    hôpital (Alpes-Côte d'Azur). Les séjours des autres établissements sont
+    rattachés au CHU Sophia ; leurs indicateurs et fiches sont supprimés."""
+    from app import donnees_hopitaux
+    code, nom, ville, region, dept, lat, lon, pop = donnees_hopitaux.HOPITAUX[0]
+    insp = inspect(engine)
+    if "hopital" not in insp.get_table_names():
+        return
+    with engine.begin() as cx:
+        autres = cx.execute(text("SELECT COUNT(*) FROM hopital WHERE code <> :c"),
+                            {"c": code}).scalar()
+        existe = cx.execute(text("SELECT COUNT(*) FROM hopital WHERE code = :c"),
+                            {"c": code}).scalar()
+        if not autres or not existe:
+            return
+        cx.execute(text("UPDATE sejour SET hopital_code = :c WHERE hopital_code <> :c"), {"c": code})
+        cx.execute(text("DELETE FROM indicateur_hopital WHERE hopital_code <> :c"), {"c": code})
+        cx.execute(text("DELETE FROM hopital WHERE code <> :c"), {"c": code})
+        cx.execute(text("UPDATE hopital SET nom = :n WHERE code = :c"), {"n": nom, "c": code})
+        cx.execute(text("UPDATE demande SET hopitaux_json = '[]'"))
+    logger.info("Base ramenée à un seul établissement : %s.", nom)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _verifier_schema()
     Base.metadata.create_all(bind=engine)
+    _migrer_colonnes()
+    _restreindre_hopitaux()
 
     if SEED_AUTO:
         # Base vide : on la peuple pour que le portail soit utilisable dès le
@@ -121,6 +159,7 @@ app.include_router(parametres.router)
 app.include_router(hopitaux.router)
 app.include_router(import_donnees.router)
 app.include_router(mails.router)
+app.include_router(politiques.router)
 
 
 @app.get("/sante", tags=["Technique"])

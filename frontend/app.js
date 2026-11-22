@@ -30,21 +30,21 @@ const etat = {
 // mode sombre peut la redéfinir via la classe pastille-<code>, voir le CSS),
 // pour la repérer d'un coup d'œil dans les listes denses.
 const CATEGORIES = {
-  IDENTIFIANT_DIRECT: { code: "identite", label: "Identité du patient", classe: "border-brique/40 text-brique bg-briquepale",
-    couleur: "#3B3A12",
-    explication: "Nom, IPP... Toujours remplacé par un code, jamais servi tel quel." },
-  QUASI_IDENTIFIANT:  { code: "quasi", label: "Peut identifier indirectement", classe: "border-ambre/40 text-ambre bg-ambrepale",
-    couleur: "#4F0C28",
-    explication: "Date, code postal... Réduit par défaut (l'année plutôt que le jour, par exemple)." },
-  DONNEE_SANTE:       { code: "sante", label: "Donnée médicale", classe: "border-vert/40 text-vert bg-vertpale",
-    couleur: "#106305",
-    explication: "Diagnostic, traitement... Servie telle quelle, en expliquant pourquoi." },
-  ADMINISTRATIF:      { code: "admin", label: "Donnée administrative", classe: "border-trait text-ardoise bg-sable",
-    couleur: "#E7993A",
-    explication: "Service, durée de séjour... Aucune protection nécessaire." },
-  DONNEE_PUBLIQUE:    { code: "public", label: "Donnée publique", classe: "border-lavande/40 text-lavande bg-bleuetpale",
-    couleur: "#4A230E",
-    explication: "Statistique ou référentiel déjà public : aucun patient concerné." },
+  IDENTIFIANT_DIRECT: { code: "identite", label: "Identité du patient", classe: "border-trait text-encre bg-sable",
+    couleur: "#1E3F66",
+    explication: "Nom, numéro de dossier… Toujours remplacé par un code : vous ne le voyez jamais." },
+  QUASI_IDENTIFIANT:  { code: "quasi", label: "Peut identifier indirectement", classe: "border-trait text-encre bg-sable",
+    couleur: "#4F8FC9",
+    explication: "Date, code postal… Servi en version réduite : l'année plutôt que le jour, par exemple." },
+  DONNEE_SANTE:       { code: "sante", label: "Donnée médicale", classe: "border-trait text-encre bg-sable",
+    couleur: "#2A9D8F",
+    explication: "Diagnostic, traitement… Servi tel quel, avec la justification de la demande." },
+  ADMINISTRATIF:      { code: "admin", label: "Donnée administrative", classe: "border-trait text-encre bg-sable",
+    couleur: "#7FCBB4",
+    explication: "Service, durée de séjour… Aucun risque : servi tel quel." },
+  DONNEE_PUBLIQUE:    { code: "public", label: "Donnée publique", classe: "border-trait text-encre bg-sable",
+    couleur: "#C3DCE8",
+    explication: "Statistique ou référentiel déjà public : aucun patient n'est concerné." },
 };
 
 const STATUTS = {
@@ -100,6 +100,7 @@ function notifier(message, type = "ok") {
   n.classList.remove("hidden");
 }
 
+const pl = (n, un, autre) => (n > 1 ? autre : un);
 const chip = (texte, classes) =>
   `<span class="inline-block border px-2 py-0.5 text-[11px] leading-4 rounded-full ${classes}">${echapper(texte)}</span>`;
 
@@ -109,7 +110,7 @@ function chipCat(cat, libelleSecours, classesSecours) {
   // Taille généreuse et liseré gris pour que la pastille reste repérable même
   // sur un fond très pâle (Porcelaine Mist) où la couleur seule ne suffit pas.
   return `<span class="inline-flex items-center gap-2 border px-2 py-0.5 text-[11px] leading-4 rounded-full ${cat.classe}">
-    <span class="inline-block w-2.5 h-2.5 rounded-full shrink-0 pastille-${cat.code}" style="background:${cat.couleur}; box-shadow:0 0 0 1.5px #7C8696"></span>
+    <span class="inline-block w-3 h-3 rounded-full shrink-0 pastille-${cat.code}" style="background:${cat.couleur}; box-shadow:0 0 0 1.5px #7C8696"></span>
     ${echapper(cat.label)}
   </span>`;
 }
@@ -118,13 +119,13 @@ const statut = (code) => chip(LIBELLES_STATUT[code] ?? code, STATUTS[code] ?? "b
 
 function dateFR(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("fr-FR",
+  return new Date(iso).toLocaleDateString(lieu(),
     { day: "2-digit", month: "long", year: "numeric" });
 }
 
 function dateCourte(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("fr-FR",
+  return new Date(iso).toLocaleDateString(lieu(),
     { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
@@ -137,7 +138,7 @@ function ajouterJours(iso, jours) {
 }
 
 function horodatageFR(iso) {
-  return new Date(iso).toLocaleString("fr-FR",
+  return new Date(iso).toLocaleString(lieu(),
     { dateStyle: "short", timeStyle: "medium" });
 }
 
@@ -175,7 +176,11 @@ async function api(chemin, { methode = "GET", corps = null, formulaire = null } 
     }
     const message = typeof detail === "string" ? detail
       : Array.isArray(detail) ? detail.map(d => d.msg).join(", ")
-      : "Requête refusée par le serveur.";
+      : reponse.status === 404 || reponse.status === 405 || reponse.status === 501
+        ? `Cette adresse ne mène pas à l'API (erreur ${reponse.status}). Ouvrez http://127.0.0.1:8000 dans le navigateur, avec « uvicorn app.main:app » lancé depuis le dossier backend.`
+      : reponse.status >= 500
+        ? `Erreur interne du serveur (${reponse.status}). Le détail est affiché dans le terminal où tourne uvicorn.`
+      : `Requête refusée par le serveur (erreur ${reponse.status}).`;
     throw { message, statut: reponse.status };
   }
   return donnees;
@@ -186,7 +191,11 @@ async function telecharger(chemin, nomParDefaut) {
     const reponse = await fetch(API + chemin, {
       headers: { Authorization: `Bearer ${etat.token}` },
     });
-    if (!reponse.ok) throw new Error();
+    if (!reponse.ok) {
+      let detail = "";
+      try { const j = await reponse.json(); if (typeof j.detail === "string") detail = j.detail; } catch {}
+      throw new Error(detail);
+    }
     const blob = await reponse.blob();
     const lien = document.createElement("a");
     lien.href = URL.createObjectURL(blob);
@@ -194,8 +203,8 @@ async function telecharger(chemin, nomParDefaut) {
     lien.click();
     URL.revokeObjectURL(lien.href);
     notifier("Fichier téléchargé.");
-  } catch {
-    notifier("Le téléchargement a échoué.", "erreur");
+  } catch (err) {
+    notifier(err && err.message ? err.message : "Le téléchargement a échoué.", "erreur");
   }
 }
 
@@ -209,9 +218,6 @@ function appliquerTheme(theme) {
   const sombre = theme === "sombre";
   document.documentElement.classList.toggle("dark", sombre);
   $$(".interrupteur-sombre").forEach(b => b.setAttribute("aria-pressed", String(sombre)));
-  // Logos : une version claire du texte pour le fond bleu du mode sombre.
-  $$(".logo-marque").forEach(img => img.src = sombre ? "assets/logo-sombre.png" : "assets/logo.png");
-  $$(".marque-filigrane").forEach(img => img.src = sombre ? "assets/marque-sombre.png" : "assets/marque.png");
 }
 (function initTheme() {
   const prefere = localStorage.getItem(CLE_THEME)
@@ -317,8 +323,9 @@ const ONGLETS = [
   { cle: "autorisations", libelle: "Accès",            roles: ["CHERCHEUR", "DPO", "ADMIN"] },
   { cle: "notifications", libelle: "Alertes",          roles: ["CHERCHEUR", "DPO"] },
   { cle: "catalogue",     libelle: "Catalogue",        roles: ["CHERCHEUR", "DPO", "ADMIN"] },
-  { cle: "carte",         libelle: "Carte",            roles: ["CHERCHEUR", "DPO"] },
+  { cle: "dashboard",     libelle: "Tableau de bord",  roles: ["CHERCHEUR"] },
   { cle: "import",        libelle: "Import",           roles: ["DPO"] },
+  { cle: "politiques",    libelle: "Politiques",       roles: ["DPO"] },
   { cle: "comptes",       libelle: "Comptes",          roles: ["ADMIN"] },
   { cle: "synthese",      libelle: "Synthèse",         roles: ["DPO"] },
   { cle: "journal",       libelle: "Connexions",       roles: ["ADMIN"] },
@@ -391,8 +398,9 @@ async function afficher(cle) {
   if (cle === "autorisations") await chargerAutorisations();
   if (cle === "notifications") await chargerNotifications();
   if (cle === "catalogue")     await chargerCatalogue();
-  if (cle === "carte")         await chargerCarte();
+  if (cle === "dashboard")     await chargerDashboard();
   if (cle === "import")        await chargerImport();
+  if (cle === "politiques")    await chargerPolitiques();
   if (cle === "comptes")       await chargerComptes();
   if (cle === "synthese")      await chargerSynthese();
   if (cle === "journal")       await chargerJournal();
@@ -432,7 +440,7 @@ async function chargerChamps(lotId) {
     <label class="service-case inline-flex items-center gap-1.5 rounded-lg border border-trait
                   px-3 py-1.5 text-sm cursor-pointer hover:border-corail transition-colors"
            data-service="${echapper(nomService)}">
-      <input type="checkbox" class="accent-[#507593]"> ${echapper(nomService)}
+      <input type="checkbox" class="accent-[#2F5D8C]"> ${echapper(nomService)}
     </label>`).join("");
   $$("#liste-services input").forEach(i => i.addEventListener("change", () => {
     i.closest(".service-case").classList.toggle("border-indigo", i.checked);
@@ -444,14 +452,15 @@ async function chargerChamps(lotId) {
   // ne concerne que les séjours) : c'est pourquoi le champ hopitaux arrive du
   // catalogue, pas d'un filtre fixe comme service_source.
   const hopitaux = etat.lotCourant.hopitaux || [];
-  $("#bloc-hopitaux").classList.toggle("hidden", hopitaux.length === 0);
+  // Un seul établissement (prototype) : rien à choisir, le bloc reste masqué.
+  $("#bloc-hopitaux").classList.toggle("hidden", hopitaux.length <= 1);
   const parRegion = {};
   hopitaux.forEach(h => (parRegion[h.region] ??= []).push(h));
   $("#liste-hopitaux").innerHTML = Object.entries(parRegion).sort(([a], [b]) => a.localeCompare(b))
     .map(([region, etabs]) => `
       <div>
         <label class="region-case flex items-center gap-2 text-sm font-semibold cursor-pointer">
-          <input type="checkbox" class="case-region accent-[#507593]" data-region="${echapper(region)}">
+          <input type="checkbox" class="case-region accent-[#2F5D8C]" data-region="${echapper(region)}">
           ${echapper(region)}
         </label>
         <div class="mt-1.5 ml-6 flex flex-wrap gap-2">
@@ -459,7 +468,7 @@ async function chargerChamps(lotId) {
             <label class="hopital-case inline-flex items-center gap-1.5 rounded-lg border border-trait
                           px-2.5 py-1 text-xs cursor-pointer hover:border-corail transition-colors"
                    data-code="${echapper(h.code)}" data-region="${echapper(region)}">
-              <input type="checkbox" class="accent-[#507593]"> ${echapper(h.nom)}
+              <input type="checkbox" class="accent-[#2F5D8C]"> ${echapper(h.nom)}
             </label>`).join("")}
         </div>
       </div>`).join("");
@@ -643,7 +652,7 @@ function rendreConformite(rapport, cible) {
        </div>`
     : `<div class="border-l-2 border-brique bg-briquepale px-3.5 py-2.5">
          <p class="text-sm text-brique font-medium">
-           ${rapport.nb_bloquants} règle${rapport.nb_bloquants > 1 ? "s" : ""} bloquante${rapport.nb_bloquants > 1 ? "s" : ""}
+           ${rapport.nb_bloquants} ${pl(rapport.nb_bloquants, "règle bloquante", "règles bloquantes")}
          </p>
          <p class="text-xs text-brique/80 mt-0.5">Corrigez pour pouvoir transmettre.</p>
        </div>`;
@@ -700,7 +709,7 @@ async function chargerDemandes() {
       <p class="text-xs text-ardoise mt-1.5">
         <span>${reference(d)}</span>
         <span class="ml-3">${echapper(d.demandeur.nom_complet)}</span>
-        <span class="ml-3">${d.champs_demandes.length} colonne${d.champs_demandes.length > 1 ? "s" : ""}</span>
+        <span class="ml-3">${d.champs_demandes.length} ${pl(d.champs_demandes.length, "colonne", "colonnes")}</span>
       </p>
     </button>`).join("");
   $$(".ligne-demande").forEach(b =>
@@ -791,7 +800,7 @@ async function ouvrirDemande(id) {
       <input id="conditions" class="w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm"
              placeholder="Ex. : consultation sur poste sécurisé uniquement.">
       <label class="flex items-center gap-2 mt-3 text-sm">
-        <input id="sous-condition" type="checkbox" class="accent-[#507593]"> Accord sous condition
+        <input id="sous-condition" type="checkbox" class="accent-[#2F5D8C]"> Accord sous condition
       </label>
 
       <div class="flex gap-2 mt-4">
@@ -917,6 +926,36 @@ async function chargerAccesOuverts() {
   if (ouvertes.length === 1) extraire(ouvertes[0].id);
 }
 
+// Carte « Contrôle de confidentialité » : risque de ré-identification des
+// lignes livrées (k-anonymat) et politique appliquée.
+function carteControle(c) {
+  if (!c) return "";
+  const styles = {
+    FAIBLE: ["border-vert/40 bg-vertpale", "text-vert", "Risque faible"],
+    MODERE: ["border-ambre/40 bg-ambrepale", "text-ambre", "Risque modéré"],
+    ELEVE:  ["border-brique/40 bg-briquepale", "text-brique", "Risque élevé"],
+  };
+  const [fond, texte, libelle] = styles[c.niveau] ?? styles.MODERE;
+  return `
+    <div class="mb-5 rounded-xl border ${fond} px-5 py-4">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <p class="text-xs font-semibold text-ardoise uppercase tracking-wide">Contrôle de confidentialité</p>
+        <p class="text-sm font-semibold ${texte}">${libelle}</p>
+      </div>
+      <div class="mt-2.5 h-1.5 rounded-full bg-black/10 overflow-hidden" dir="ltr">
+        <div class="h-full rounded-full ${texte}" style="width:${Math.max(3, c.score)}%;background:currentColor"></div>
+      </div>
+      <p class="text-xs text-ardoise mt-2">Score de risque : ${c.score} sur 100
+        ${c.k_min != null ? `<span class="ml-3">Plus petit groupe : ${c.k_min} (seuil : ${c.k_cible})</span>` : ""}</p>
+      <ul class="mt-2 space-y-1">
+        ${(c.messages || []).map(m => `<li class="text-xs leading-relaxed">${echapper(m)}</li>`).join("")}
+      </ul>
+      ${c.quasi_identifiants && c.quasi_identifiants.length
+        ? `<p class="text-xs text-ardoise mt-2">Quasi-identifiants analysés : ${echapper(c.quasi_identifiants.join(", "))}</p>` : ""}
+      <p class="text-xs text-ardoise mt-1">Politique appliquée : ${echapper(c.politique)}</p>
+    </div>`;
+}
+
 async function extraire(demandeId) {
   let e;
   try {
@@ -949,10 +988,10 @@ async function extraire(demandeId) {
     ? `<div class="mb-5 rounded-xl border border-vert/40 bg-vertpale px-5 py-3.5">
          <p class="text-sm font-semibold text-vert">Identités des patients masquées</p>
          <p class="text-xs text-vert/90 mt-1 leading-relaxed">
-           ${nbIdentites
-             ? `${nbIdentites} colonne${nbIdentites > 1 ? "s" : ""} d'identité remplacée${nbIdentites > 1 ? "s" : ""} par un pseudonyme propre à cette étude.`
-             : "Aucune colonne d'identité dans cette extraction."}
-           Aucun nom ni numéro de sécurité sociale n'existe dans la base.
+           <span>${nbIdentites
+             ? `${nbIdentites} ${pl(nbIdentites, "colonne d'identité remplacée", "colonnes d'identité remplacées")} par un pseudonyme propre à cette étude.`
+             : "Aucune colonne d'identité dans cette extraction."}</span>
+           <span>Aucun nom ni numéro de sécurité sociale n'existe dans la base.</span>
          </p>
        </div>`
     : `<div class="mb-5 rounded-xl border border-brique/40 bg-briquepale px-5 py-3.5">
@@ -1002,6 +1041,7 @@ async function extraire(demandeId) {
     </div>` : "";
 
   $("#resultat-extraction").innerHTML = `
+    ${carteControle(e.controle)}
     ${bandeau}
     <div class="grid lg:grid-cols-[1fr_360px] gap-10 items-start">
       <div class="min-w-0">
@@ -1011,8 +1051,8 @@ async function extraire(demandeId) {
             <p class="text-xs text-ardoise mt-1.5">
               ${echapper(e.lot)}
               <span class="ml-3">
-                ${e.nb_lignes} ligne${e.nb_lignes > 1 ? "s" : ""} affichée${e.nb_lignes > 1 ? "s" : ""}${
-                  e.nb_total > e.nb_lignes ? ` sur ${e.nb_total} au total` : ""}
+                <span>${e.nb_lignes} ${pl(e.nb_lignes, "ligne affichée", "lignes affichées")}</span>${
+                  e.nb_total > e.nb_lignes ? ` <span>sur ${e.nb_total} au total</span>` : ""}
               </span>
               <span class="ml-3">extraction du ${dateCourte(e.produite_le)}</span>
             </p>
@@ -1061,7 +1101,7 @@ async function extraire(demandeId) {
 $("#btn-expiration").addEventListener("click", async () => {
   const r = await api("/autorisations/taches/expiration", { methode: "POST" });
   notifier(`${r.preavis_envoyes} préavis, ${r.acces_clotures.length} accès clos, `
-         + `${r.donnees_purgees} purge${r.donnees_purgees > 1 ? "s" : ""}.`);
+         + `${r.donnees_purgees} purge(s).`);
   await chargerAutorisations();
   await majCompteurAlertes();
 });
@@ -1155,13 +1195,13 @@ async function chargerNotifications() {
   $("#liste-echeances").innerHTML = echeances.length
     ? `<div class="border-l-2 border-ambre bg-ambrepale px-5 py-4">
          <p class="text-sm font-medium text-ambre">
-           ${echeances.length} accès arrive${echeances.length > 1 ? "nt" : ""} à terme sous peu
+           ${echeances.length} ${pl(echeances.length, "accès arrive à terme sous peu", "accès arrivent à terme sous peu")}
          </p>
          <ul class="mt-2.5 space-y-1.5">
            ${echeances.map(e => `<li class="text-sm">
               ${echapper(e.titre_projet)}, ${echapper(e.demandeur)},
-              <span class="text-ambre font-medium">${e.jours_restants} jour${e.jours_restants > 1 ? "s" : ""}</span>
-              restant${e.jours_restants > 1 ? "s" : ""}
+              <span class="text-ambre font-medium">${e.jours_restants} ${pl(e.jours_restants, "jour", "jours")}</span>
+              <span>${pl(e.jours_restants, "restant", "restants")}</span>
             </li>`).join("")}
          </ul>
        </div>`
@@ -1214,124 +1254,214 @@ async function chargerCatalogue() {
           <div class="rangee px-5 py-3 grid grid-cols-[minmax(0,1fr)_190px_150px] gap-x-4 items-center">
             <span class="text-sm">${echapper(c.libelle)}</span>
             <div class="justify-self-center">${chipCat(CATEGORIES[c.categorie])}</div>
-            <span class="text-xs text-ardoise text-left justify-self-center">Reçue : ${echapper(c.protection)}</span>
+            <span class="text-xs text-ardoise text-left justify-self-center">Vous recevrez : ${echapper(c.protection)}</span>
           </div>`).join("")}
       </div>
     </div>`).join("");
 }
 
 // ==========================================================================
-// Carte des établissements
+// Tableau de bord du chercheur
 // ==========================================================================
-const LIBELLES_INDICATEUR = {
-  taux_hospitalisation: "Taux d'hospitalisation (pour 100 000 hab.)",
-  taux_mortalite: "Taux de mortalité (pour 100 000 hab.)",
-  hospitalisations_covid: "Hospitalisations liées au COVID-19",
-};
+// Construit à partir de l'extraction déjà protégée par le serveur (identités
+// masquées, valeurs réduites) : le tableau de bord ne voit rien de plus que
+// l'onglet « Extraction ». Cliquer sur une barre filtre les autres graphiques.
+const DB_LIGNES_TABLE = 8;
 
-// Bassin métropolitain approximatif : suffisant pour situer les points les
-// uns par rapport aux autres, sans prétendre à un fond de carte géographique.
-const PROJECTION = { lonMin: -5.2, lonMax: 9.6, latMin: 41.1, latMax: 51.3 };
-function projeter(lat, lon, largeur = 600, hauteur = 560, marge = 40) {
-  const x = marge + (lon - PROJECTION.lonMin) / (PROJECTION.lonMax - PROJECTION.lonMin) * (largeur - marge * 2);
-  const y = marge + (PROJECTION.latMax - lat) / (PROJECTION.latMax - PROJECTION.latMin) * (hauteur - marge * 2);
-  return { x, y };
-}
-
-function melangerCouleur(c1, c2, t) {
-  const h = (c) => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
-  const [r1, g1, b1] = h(c1.replace("#", ""));
-  const [r2, g2, b2] = h(c2.replace("#", ""));
-  const r = Math.round(r1 + (r2 - r1) * t), g = Math.round(g1 + (g2 - g1) * t), b = Math.round(b1 + (b2 - b1) * t);
-  return `#${[r, g, b].map(v => v.toString(16).padStart(2, "0")).join("")}`;
-}
-function couleurIndicateur(t) {
-  return t < 0.5 ? melangerCouleur("#507593", "#BEB06C", t * 2)
-                 : melangerCouleur("#BEB06C", "#8F1437", (t - 0.5) * 2);
-}
-
-async function chargerCarte() {
-  if (!etat.hopitauxCarte) {
-    const liste = await api("/hopitaux");
-    etat.hopitauxCarte = await Promise.all(
-      liste.map(h => api(`/hopitaux/${h.id}`))
-    );
-    const annees = [...new Set(
-      etat.hopitauxCarte.flatMap(h => h.historique.map(l => l.annee))
-    )].sort();
-    $("#carte-annee").innerHTML = annees.map(a =>
-      `<option value="${a}" ${a === annees[annees.length - 1] ? "selected" : ""}>${a}</option>`).join("");
+async function chargerDashboard() {
+  const demandes = await api("/demandes");
+  const ouvertes = demandes.filter(d => d.autorisation && d.autorisation.statut === "ACTIVE");
+  if (!ouvertes.length) {
+    $("#db-choix").innerHTML = "";
+    $("#db-contenu").innerHTML = `
+      <p class="text-sm text-ardoise max-w-xl leading-relaxed">
+        Aucun accès ouvert. Le tableau de bord se remplit dès que le délégué a validé
+        une demande, et se vide à son échéance.
+      </p>`;
+    return;
   }
-  dessinerCarte();
-}
+  const courant = ouvertes.find(d => d.id === etat.dbId) ?? ouvertes[0];
+  etat.dbId = courant.id;
+  $("#db-choix").innerHTML = ouvertes.length > 1 ? ouvertes.map(d => `
+    <button type="button" data-db-acces="${d.id}"
+            class="rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors
+                   ${d.id === courant.id ? "border-corail text-encre bg-carte" : "border-trait text-ardoise bg-carte hover:border-corail"}">
+      ${echapper(d.titre_projet)}
+    </button>`).join("") : "";
+  $$("[data-db-acces]").forEach(b => b.addEventListener("click", () => {
+    etat.dbId = Number(b.dataset.dbAcces);
+    chargerDashboard();
+  }));
 
-$("#carte-indicateur").addEventListener("change", dessinerCarte);
-$("#carte-annee").addEventListener("change", dessinerCarte);
-
-function dessinerCarte() {
-  const hopitaux = etat.hopitauxCarte;
-  if (!hopitaux) return;
-  const indicateur = $("#carte-indicateur").value;
-  const annee = Number($("#carte-annee").value);
-
-  const points = hopitaux.map(h => {
-    const ligne = h.historique.find(l => l.annee === annee);
-    return { h, valeur: ligne ? ligne[indicateur] : null };
-  }).filter(p => p.valeur !== null);
-
-  const valeurs = points.map(p => p.valeur);
-  const min = Math.min(...valeurs), max = Math.max(...valeurs) || 1;
-  const rayonPop = (pop) => 5 + Math.sqrt(pop) / 46;
-
-  const cercles = points.map(({ h, valeur }) => {
-    const { x, y } = projeter(h.latitude, h.longitude);
-    const t = max > min ? (valeur - min) / (max - min) : 0;
-    const couleur = couleurIndicateur(t);
-    return `<circle class="point-hopital" data-id="${h.id}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
-                     r="${rayonPop(h.population_bassin).toFixed(1)}" fill="${couleur}"
-                     fill-opacity="0.82" stroke="#fff" stroke-width="1.5" style="cursor:pointer">
-              <title>${h.nom} — ${valeur.toLocaleString("fr-FR")}</title>
-            </circle>`;
-  }).join("");
-
-  const grille = [0, 1, 2, 3, 4].map(i => {
-    const y = 40 + i * (480 / 4);
-    return `<line x1="40" y1="${y}" x2="560" y2="${y}" stroke="#D9E1E6" stroke-width="1"/>`;
-  }).join("");
-
-  $("#carte-svg").innerHTML = `
-    <rect x="0" y="0" width="600" height="560" fill="#F4F1EA"/>
-    ${grille}
-    <text x="40" y="24" font-size="12" fill="#507593" font-weight="600">France métropolitaine</text>
-    ${cercles}`;
-
-  $("#carte-echelle").innerHTML = `
-    <span>${Math.round(min).toLocaleString("fr-FR")}</span>
-    <span class="inline-block w-24 h-2.5 rounded-full" style="background:linear-gradient(90deg,#507593,#BEB06C,#8F1437)"></span>
-    <span>${Math.round(max).toLocaleString("fr-FR")}</span>`;
-
-  $$(".point-hopital").forEach(c => c.addEventListener("click", () =>
-    afficherDetailHopital(Number(c.dataset.id), indicateur)));
-
-  if (!$("#carte-detail").innerHTML && points.length) {
-    afficherDetailHopital(points[0].h.id, indicateur);
+  $("#db-contenu").innerHTML = `<p class="text-sm text-ardoise">Chargement des données…</p>`;
+  let e;
+  try {
+    e = await api(`/extractions/${courant.id}?limite=5000`);
+  } catch (err) {
+    $("#db-contenu").innerHTML =
+      `<div class="border-l-2 border-brique bg-briquepale px-4 py-3 text-sm text-brique">${echapper(err.message)}</div>`;
+    return;
   }
+  etat.db = { e, demande: courant, graphiques: graphiquesDashboard(e), filtres: {} };
+  dessinerDashboard();
 }
 
-function afficherDetailHopital(id, indicateur) {
-  const h = etat.hopitauxCarte.find(x => x.id === id);
-  if (!h) return;
-  const historique = h.historique.map(l => ({ libelle: String(l.annee), valeur: l[indicateur] }));
-  $("#carte-detail").innerHTML = `
-    <div class="px-5 py-4 border-b border-trait">
-      <h3 class="text-base font-bold leading-tight">${echapper(h.nom)}</h3>
-      <p class="text-xs text-ardoise mt-1">${echapper(h.ville)} · ${echapper(h.region)}</p>
+// Choisit quels graphiques tracer, selon la nature de chaque colonne.
+function graphiquesDashboard(e) {
+  const graphiques = [];
+  const parColonne = {};
+  e.statistiques.forEach(s => (parColonne[s.colonne] ??= []).push({ libelle: s.valeur, n: s.effectif }));
+  Object.entries(parColonne).forEach(([titre, barres]) =>
+    graphiques.push({ type: "agrege", titre, barres }));
+
+  e.colonnes.forEach(c => {
+    if (c.categorie === "IDENTIFIANT_DIRECT") return;
+    const brutes = e.lignes.map(l => l[c.code]).filter(v => v !== undefined && v !== null && v !== "");
+    if (brutes.length < 2) return;
+    const dates = brutes.every(v => /^\d{4}-\d{2}-\d{2}/.test(v));
+    const valeur = dates ? (l => (l[c.code] ?? "").slice(0, 4)) : (l => l[c.code]);
+    const vus = new Set(brutes.map(v => (dates ? v.slice(0, 4) : v)));
+    const nombres = brutes.map(v => Number(String(v).replace(",", ".")));
+    if (!dates && nombres.every(Number.isFinite) && vus.size > 8) {
+      graphiques.push({ type: "histo", code: c.code, titre: c.libelle, valeur: l => Number(String(l[c.code]).replace(",", ".")) });
+    } else if (vus.size >= 2 && vus.size <= 12) {
+      graphiques.push({ type: "categ", code: c.code, titre: c.libelle, valeur });
+    }
+  });
+  return graphiques.slice(0, 8);
+}
+
+function lignesFiltrees(sauf) {
+  const { e, graphiques, filtres } = etat.db;
+  return e.lignes.filter(l => graphiques.every(g =>
+    g.code === sauf || !(g.code in filtres) || g.valeur(l) === filtres[g.code]));
+}
+
+function barresDashboard(g, barres, filtrable) {
+  const max = Math.max(1, ...barres.map(b => b.n));
+  const choisi = filtrable ? etat.db.filtres[g.code] : undefined;
+  return barres.map(b => `
+    <button type="button" ${filtrable ? `data-db-code="${echapper(g.code)}" data-db-val="${echapper(b.libelle)}"` : "disabled"}
+            class="db-ligne w-full grid grid-cols-[minmax(0,40%)_1fr_auto] items-center gap-3 text-left py-1 ${filtrable ? "cursor-pointer" : "cursor-default"}">
+      <span class="text-xs truncate ${choisi === b.libelle ? "font-semibold text-encre" : "text-ardoise"}">${echapper(libelleLisible(b.libelle))}</span>
+      <span class="db-piste h-2.5 rounded-full overflow-hidden">
+        <span class="db-barre ${choisi === b.libelle ? "sel" : ""} block h-full rounded-full" style="width:${Math.max(3, b.n / max * 100)}%"></span>
+      </span>
+      <span class="text-xs font-mono w-10 text-right">${b.n.toLocaleString(lieu())}</span>
+    </button>`).join("");
+}
+
+function histogrammeDashboard(g, lignes) {
+  const valeurs = lignes.map(g.valeur).filter(Number.isFinite);
+  if (!valeurs.length) return `<p class="text-xs text-ardoise">Aucune valeur pour ce filtre.</p>`;
+  const min = Math.min(...valeurs), max = Math.max(...valeurs);
+  const nb = 8, pas = (max - min) / nb || 1;
+  const cases = Array(nb).fill(0);
+  valeurs.forEach(v => { cases[Math.min(nb - 1, Math.floor((v - min) / pas))]++; });
+  const haut = Math.max(1, ...cases);
+  const moyenne = valeurs.reduce((s, v) => s + v, 0) / valeurs.length;
+  const fmt = v => v.toLocaleString(lieu(), { maximumFractionDigits: 1 });
+  return `
+    <div class="flex items-end gap-1.5 h-28">
+      ${cases.map((n, i) => `
+        <span class="flex-1 flex flex-col justify-end h-full" title="${fmt(min + i * pas)} – ${fmt(min + (i + 1) * pas)} : ${n}">
+          <span class="db-barre block rounded-t" style="height:${Math.max(2, n / haut * 100)}%"></span>
+        </span>`).join("")}
     </div>
-    <div class="px-5 py-4 space-y-4">
-      <p class="text-xs text-ardoise">Bassin de population desservi : <span class="font-medium text-encre">${h.population_bassin.toLocaleString("fr-FR")}</span></p>
-      <p class="text-xs text-ardoise">Séjours enregistrés dans la base : <span class="font-medium text-encre">${h.nb_sejours}</span></p>
-      ${barres(LIBELLES_INDICATEUR[indicateur], historique, "w-10")}
+    <div class="flex justify-between text-xs text-ardoise mt-1.5">
+      <span>${fmt(min)}</span><span>Moyenne : ${fmt(moyenne)}</span><span>${fmt(max)}</span>
     </div>`;
+}
+
+function dessinerDashboard() {
+  const { e, demande, graphiques, filtres } = etat.db;
+  const lignes = lignesFiltrees(null);
+  const actifs = Object.entries(filtres);
+
+  const tuiles = [
+    ["Lignes retenues", lignes.length.toLocaleString(lieu())],
+    ["Lignes autorisées", (e.nb_total || e.nb_lignes).toLocaleString(lieu())],
+    ["Colonnes", String(e.colonnes.length)],
+    ["Accès jusqu'au", dateCourte(demande.autorisation.date_fin)],
+  ].map(([lib, val]) => `
+    <div class="bg-carte rounded-xl border border-trait px-4 py-3.5">
+      <p class="text-xs text-ardoise">${lib}</p>
+      <p class="text-2xl font-bold tracking-tight mt-1">${val}</p>
+    </div>`).join("");
+
+  const puces = actifs.length ? `
+    <div class="flex flex-wrap items-center gap-2 mt-5">
+      ${actifs.map(([code, v]) => {
+        const g = graphiques.find(x => x.code === code);
+        return `<button type="button" data-db-retirer="${echapper(code)}"
+                  class="rounded-full border border-corail text-xs font-medium px-3 py-1 bg-carte">
+                  ${echapper(g ? g.titre : code)} : ${echapper(libelleLisible(v))} ✕</button>`;
+      }).join("")}
+      <button type="button" id="db-reinitialiser" class="text-xs font-semibold text-corailfonce hover:underline">Tout réinitialiser</button>
+    </div>` : "";
+
+  const cartes = graphiques.map((g, i) => {
+    let corps;
+    if (g.type === "agrege") {
+      corps = barresDashboard(g, g.barres, false);
+    } else if (g.type === "categ") {
+      const compte = new Map();
+      lignesFiltrees(g.code).forEach(l => { const v = g.valeur(l); if (v !== "" && v != null) compte.set(v, (compte.get(v) ?? 0) + 1); });
+      const barres = [...compte].map(([libelle, n]) => ({ libelle, n })).sort((a, b) => b.n - a.n).slice(0, 10);
+      corps = barres.length ? barresDashboard(g, barres, true)
+                            : `<p class="text-xs text-ardoise">Aucune valeur pour ce filtre.</p>`;
+    } else {
+      corps = histogrammeDashboard(g, lignesFiltrees(g.code));
+    }
+    return `
+      <div class="bg-carte rounded-xl border border-trait p-5">
+        <p class="text-sm font-semibold mb-3">${echapper(g.titre)}</p>
+        ${corps}
+      </div>`;
+  }).join("");
+
+  const colTable = e.colonnes.filter(c => c.categorie !== "IDENTIFIANT_DIRECT").slice(0, 6);
+  const table = lignes.length && colTable.length ? `
+    <div class="bg-carte rounded-xl border border-trait overflow-x-auto mt-6">
+      <table class="w-full text-xs">
+        <thead><tr class="text-left text-ardoise border-b border-trait">
+          ${colTable.map(c => `<th class="px-4 py-2.5 font-semibold">${echapper(c.libelle)}</th>`).join("")}
+        </tr></thead>
+        <tbody>
+          ${lignes.slice(0, DB_LIGNES_TABLE).map(l => `
+            <tr class="border-b border-trait last:border-0">
+              ${colTable.map(c => `<td class="px-4 py-2.5">${echapper(String(l[c.code] ?? "—"))}</td>`).join("")}
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>` : "";
+
+  const note = (e.nb_total || 0) > e.nb_lignes
+    ? `<p class="text-xs text-ardoise mt-4">Les graphiques détaillés portent sur les ${e.nb_lignes.toLocaleString(lieu())} premières lignes sur ${e.nb_total.toLocaleString(lieu())}.</p>`
+    : "";
+
+  $("#db-contenu").innerHTML = `
+    ${carteControle(e.controle)}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${tuiles}</div>
+    ${puces}
+    <div class="mt-6 grid lg:grid-cols-2 gap-5">${cartes || `<p class="text-sm text-ardoise">Ces données ne se prêtent à aucun graphique.</p>`}</div>
+    ${table}
+    ${note}
+    <p class="text-xs text-ardoise mt-4 leading-relaxed">
+      Données issues de votre accès autorisé, avec les protections appliquées : aucune identité de patient n'apparaît ici.
+    </p>`;
+
+  $$("[data-db-code]").forEach(b => b.addEventListener("click", () => {
+    const { dbCode: code, dbVal: val } = b.dataset;
+    if (etat.db.filtres[code] === val) delete etat.db.filtres[code]; else etat.db.filtres[code] = val;
+    dessinerDashboard();
+  }));
+  $$("[data-db-retirer]").forEach(b => b.addEventListener("click", () => {
+    delete etat.db.filtres[b.dataset.dbRetirer];
+    dessinerDashboard();
+  }));
+  const raz = $("#db-reinitialiser");
+  if (raz) raz.addEventListener("click", () => { etat.db.filtres = {}; dessinerDashboard(); });
 }
 
 // ==========================================================================
@@ -1348,7 +1478,7 @@ async function chargerImport() {
             ${echapper(l.description || "Aucune description.")}
           </p>
           <p class="text-xs text-ardoise mt-1.5">
-            ${l.nb_lignes} ligne${l.nb_lignes > 1 ? "s" : ""}
+            ${l.nb_lignes} ${pl(l.nb_lignes, "ligne", "lignes")}
             <span class="ml-3">${chipCat(CATEGORIES[l.categorie], l.categorie, "border-trait text-ardoise")}</span>
             ${l.importe_par ? `<span class="ml-3">importé par ${echapper(l.importe_par)}</span>` : ""}
           </p>
@@ -1454,7 +1584,7 @@ async function chargerComptes() {
         </div>
         <p class="text-xs text-ardoise mt-1">
           ${echapper(c.email)}${c.service ? ` · ${echapper(c.service)}` : ""}
-          ${c.role === "CHERCHEUR" ? ` · ${c.nb_demandes} demande${c.nb_demandes > 1 ? "s" : ""} déposée${c.nb_demandes > 1 ? "s" : ""}` : ""}
+          ${c.role === "CHERCHEUR" ? ` · ${c.nb_demandes} ${pl(c.nb_demandes, "demande déposée", "demandes déposées")}` : ""}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -1542,7 +1672,7 @@ function tuile(libelle, valeur, alerte = false) {
   const vif = alerte && Number(valeur) > 0;
   return `
     <div class="bg-carte rounded-xl border ${vif ? "border-corail" : "border-trait"} p-5">
-      <p class="text-[2rem] font-bold leading-none tracking-tight ${vif ? "text-corail" : ""}">${valeur}</p>
+      <p class="text-[2rem] font-bold leading-none tracking-tight ${vif ? "text-corailfonce" : ""}">${valeur}</p>
       <p class="text-xs text-ardoise mt-2.5 leading-snug">${libelle}</p>
     </div>`;
 }
@@ -1628,7 +1758,7 @@ async function chargerAccueil() {
           </div>
           <p class="text-xs text-ardoise mt-1.5">
             <span>${reference(d)}</span>
-            <span class="ml-3">${d.champs_demandes.length} colonne${d.champs_demandes.length > 1 ? "s" : ""}</span>
+            <span class="ml-3">${d.champs_demandes.length} ${pl(d.champs_demandes.length, "colonne", "colonnes")}</span>
             <span class="ml-3">déposée le ${dateCourte(d.cree_le)}</span>
           </p>
         </button>`).join("")
@@ -1658,6 +1788,11 @@ const RESUMES_ACTION = {
   DONNEES_IMPORTEES: "Jeu de données importé", IMPORT_SUPPRIME: "Import supprimé",
   COMPTE_SUPPRIME: "Compte supprimé", ATTESTATION_TELECHARGEE: "Attestation téléchargée",
   COMPTE_CREE: "Compte créé", COMPTE_MODIFIE: "Compte modifié",
+  POLITIQUE_CREEE: "Politique créée", POLITIQUE_MODIFIEE: "Politique modifiée",
+  POLITIQUE_SUPPRIMEE: "Politique supprimée", POLITIQUE_DEFAUT: "Politique activée",
+  EXPORT_BLOQUE_POLITIQUE: "Export bloqué par la politique",
+  INTEGRITE_VERIFIEE: "Intégrité du journal vérifiée",
+  RAPPORT_AUDIT_GENERE: "Rapport d'audit généré",
 };
 
 
@@ -1745,7 +1880,7 @@ async function chargerJournal() {
   const entrees = await api(`/journal${params.toString() ? "?" + params : ""}`);
 
   $("#journal-compte").textContent = entrees.length
-    ? `${entrees.length} entrée${entrees.length > 1 ? "s" : ""}` : "";
+    ? `${entrees.length} ${pl(entrees.length, "entrée", "entrées")}` : "";
 
   $("#liste-journal").innerHTML = entrees.length
     ? entrees.map(e => `
@@ -1759,6 +1894,121 @@ async function chargerJournal() {
       </div>`).join("")
     : vide("Aucune entrée pour ces critères. Élargissez la période ou choisissez « Toutes ».");
 }
+
+// ==========================================================================
+// Politiques de confidentialité (délégué)
+// ==========================================================================
+const ACTIONS_POLITIQUE = {
+  AVERTIR: "Avertir seulement", SUPPRIMER: "Retirer les petits groupes", BLOQUER: "Bloquer l'export",
+};
+
+function reinitialiserFormPolitique() {
+  etat.polEdition = null;
+  $("#form-politique").reset();
+  $("#pol-k").value = 5;
+  $("#btn-politique").textContent = "Enregistrer la politique";
+  $("#btn-politique-annuler").classList.add("hidden");
+}
+
+async function chargerPolitiques() {
+  const liste = await api("/politiques");
+  $("#liste-politiques").innerHTML = liste.length ? liste.map(p => `
+    <div class="rangee px-5 py-4 flex items-start justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <span class="text-sm font-medium">${echapper(p.nom)}</span>
+        ${p.par_defaut ? `<span class="ml-2 inline-block rounded-full border border-vert text-vert text-[11px] px-2 py-0.5">Politique active</span>` : ""}
+        ${p.description ? `<p class="text-xs text-ardoise mt-1 leading-snug">${echapper(p.description)}</p>` : ""}
+        <p class="text-xs text-ardoise mt-1.5">
+          <span>Groupes d'au moins ${p.k_min}</span>
+          <span class="ml-3">${ACTIONS_POLITIQUE[p.action] ?? p.action}</span>
+          ${p.max_lignes_export ? `<span class="ml-3">Export limité à ${p.max_lignes_export} lignes</span>` : ""}
+        </p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        ${p.par_defaut ? "" : `<button class="pol-defaut rounded-lg border border-vert text-vert px-3 py-1.5 text-xs font-medium hover:bg-vertpale" data-id="${p.id}">Activer</button>`}
+        <button class="pol-modifier rounded-lg border border-trait px-3 py-1.5 text-xs font-medium hover:border-corail" data-id="${p.id}">Modifier</button>
+        ${p.par_defaut ? "" : `<button class="pol-supprimer rounded-lg border border-brique text-brique px-3 py-1.5 text-xs font-medium hover:bg-briquepale" data-id="${p.id}">Supprimer</button>`}
+      </div>
+    </div>`).join("")
+    : vide("Aucune politique enregistrée : la règle intégrée s'applique (groupes d'au moins 5, avertissement seulement). Créez-en une avec le formulaire ci-dessus.");
+
+  $$(".pol-defaut").forEach(b => b.addEventListener("click", async () => {
+    try { await api(`/politiques/${b.dataset.id}/defaut`, { methode: "POST" });
+          notifier("Politique activée."); await chargerPolitiques(); }
+    catch (err) { notifier(err.message, "erreur"); }
+  }));
+  $$(".pol-supprimer").forEach(b => b.addEventListener("click", async () => {
+    if (!confirm("Supprimer cette politique ?")) return;
+    try { await api(`/politiques/${b.dataset.id}`, { methode: "DELETE" });
+          notifier("Politique supprimée."); await chargerPolitiques(); }
+    catch (err) { notifier(err.message, "erreur"); }
+  }));
+  $$(".pol-modifier").forEach(b => b.addEventListener("click", () => {
+    const p = liste.find(x => x.id === Number(b.dataset.id));
+    etat.polEdition = p.id;
+    $("#pol-nom").value = p.nom; $("#pol-description").value = p.description;
+    $("#pol-k").value = p.k_min; $("#pol-action").value = p.action;
+    $("#pol-max").value = p.max_lignes_export ?? "";
+    $("#btn-politique").textContent = "Mettre à jour la politique";
+    $("#btn-politique-annuler").classList.remove("hidden");
+    $("#pol-nom").focus();
+  }));
+}
+
+$("#form-politique").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const corps = {
+    nom: $("#pol-nom").value.trim(), description: $("#pol-description").value.trim(),
+    k_min: Number($("#pol-k").value), action: $("#pol-action").value,
+    max_lignes_export: $("#pol-max").value ? Number($("#pol-max").value) : null,
+  };
+  try {
+    if (etat.polEdition) await api(`/politiques/${etat.polEdition}`, { methode: "PUT", corps });
+    else await api("/politiques", { methode: "POST", corps });
+    notifier("Politique enregistrée.");
+    reinitialiserFormPolitique();
+    await chargerPolitiques();
+  } catch (err) { notifier(err.message, "erreur"); }
+});
+$("#btn-politique-annuler").addEventListener("click", reinitialiserFormPolitique);
+
+// ==========================================================================
+// Intégrité du journal et rapport d'audit
+// ==========================================================================
+$$(".bloc-integrite").forEach(bloc => {
+  bloc.innerHTML = `
+    <div class="bg-carte rounded-xl border border-trait px-5 py-4">
+      <h3 class="text-base font-semibold">Intégrité du journal d'audit</h3>
+      <p class="text-xs text-ardoise mt-1.5 max-w-2xl leading-relaxed">
+        Chaque entrée est liée à la précédente par une empreinte : modifier ou
+        supprimer une entrée rompt la chaîne et se détecte ici.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" class="btn-verifier-integrite rounded-lg bg-indigo hover:bg-encre text-white px-4 py-2 text-sm font-semibold transition-colors">Vérifier l'intégrité</button>
+        <button type="button" class="btn-rapport-audit rounded-lg border border-trait bg-carte px-4 py-2 text-sm font-semibold hover:border-corail transition-colors">Rapport d'audit (PDF)</button>
+      </div>
+      <div class="resultat-integrite mt-3"></div>
+    </div>`;
+  bloc.querySelector(".btn-rapport-audit").addEventListener("click", () =>
+    telecharger("/journal/rapport", "rapport-audit.pdf"));
+  bloc.querySelector(".btn-verifier-integrite").addEventListener("click", async () => {
+    const cible = bloc.querySelector(".resultat-integrite");
+    try {
+      const i = await api("/journal/integrite");
+      cible.innerHTML = `
+        <div class="rounded-lg border px-4 py-3 ${i.valide ? "border-vert/40 bg-vertpale" : "border-brique/40 bg-briquepale"}">
+          <p class="text-sm font-semibold ${i.valide ? "text-vert" : "text-brique"}">
+            ${i.valide ? "Chaîne intègre : aucune rupture détectée."
+                       : `Rupture détectée à l'entrée n° ${i.premiere_anomalie.id}.`}</p>
+          ${i.valide ? "" : `<p class="text-xs mt-1">${echapper(i.premiere_anomalie.motif)}</p>`}
+          <p class="text-xs text-ardoise mt-1.5">${i.nb_chainees} entrées vérifiées${
+            i.nb_anterieures ? `, ${i.nb_anterieures} antérieures au chaînage (non vérifiables)` : ""}.</p>
+          <p class="text-[11px] font-mono text-ardoise mt-2 break-all" dir="ltr">${echapper(i.empreinte_tete)}</p>
+          <p class="text-xs text-ardoise mt-1.5 leading-relaxed">${echapper(i.avertissement)}</p>
+        </div>`;
+    } catch (err) { notifier(err.message, "erreur"); }
+  });
+});
 
 // ==========================================================================
 // Boutons des vues de pilotage

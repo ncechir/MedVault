@@ -5,7 +5,7 @@ from app.config import DATABASE_URL
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},  # spécifique SQLite
+    connect_args={"check_same_thread": False, "timeout": 30},  # SQLite : attend jusqu'à 30 s si la base est occupée
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

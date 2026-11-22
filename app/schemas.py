@@ -214,6 +214,24 @@ class AgregatOut(Base):
     effectif: int
 
 
+class ControleOut(Base):
+    """Contrôle de confidentialité (k-anonymat) appliqué avant livraison."""
+    score: int
+    niveau: str                      # FAIBLE | MODERE | ELEVE
+    k_cible: int
+    k_min: int | None = None
+    nb_lignes: int
+    nb_lignes_a_risque: int
+    nb_uniques: int = 0
+    nb_lignes_supprimees: int = 0
+    nb_agregats_supprimes: int = 0
+    quasi_identifiants: list[str] = []
+    politique: str = ""
+    action: str = "AVERTIR"
+    bloque: bool = False
+    messages: list[str] = []
+
+
 class ExtractionOut(Base):
     demande_id: int
     titre_projet: str
@@ -226,6 +244,7 @@ class ExtractionOut(Base):
     identites_masquees: bool = True
     lignes: list[dict[str, str]]
     statistiques: list[AgregatOut]
+    controle: ControleOut | None = None
 
 
 # --- Notifications (MED-8) ---
@@ -376,3 +395,41 @@ class EmailOut(Base):
     statut: str
     erreur: str
     cree_le: UTCDatetime
+
+
+# --- Politiques de données (V2) ---
+class PolitiqueIn(BaseModel):
+    nom: str = Field(min_length=3, max_length=120)
+    description: str = Field(default="", max_length=1000)
+    k_min: int = Field(default=5, ge=2, le=50)
+    action: str = Field(default="AVERTIR", pattern="^(AVERTIR|SUPPRIMER|BLOQUER)$")
+    max_lignes_export: int | None = Field(default=None, ge=1, le=5000)
+
+
+class PolitiqueOut(Base):
+    id: int
+    nom: str
+    description: str
+    k_min: int
+    action: str
+    max_lignes_export: int | None
+    par_defaut: bool
+    cree_le: UTCDatetime
+
+
+# --- Intégrité du journal (V2) ---
+class AnomalieOut(Base):
+    id: int
+    motif: str
+
+
+class IntegriteOut(Base):
+    valide: bool
+    nb_total: int
+    nb_chainees: int
+    nb_anterieures: int
+    nb_anomalies: int
+    premiere_anomalie: AnomalieOut | None = None
+    empreinte_tete: str
+    verifie_le: UTCDatetime
+    avertissement: str

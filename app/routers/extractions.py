@@ -5,7 +5,7 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from app import excel_export, extraction
+from app import controle_export, excel_export, extraction
 from app.audit import journaliser
 from app.database import get_db
 from app.dependencies import exiger_role
@@ -73,10 +73,14 @@ def consulter(
         db.commit()
         raise HTTPException(409, str(erreur))
 
+    resultat = controle_export.appliquer(db, resultat, export=False)
+    controle = resultat["controle"]
+
     journaliser(db, user, "EXTRACTION_CONSULTEE_DPO" if supervision else "EXTRACTION_CONSULTEE",
                 "demande", demande_id,
                 nb_lignes=resultat["nb_lignes"],
-                colonnes=[c["code"] for c in resultat["colonnes"]])
+                colonnes=[c["code"] for c in resultat["colonnes"]],
+                risque=controle["niveau"], score=controle["score"])
     db.commit()
     return resultat
 
@@ -96,9 +100,22 @@ def exporter(
     except extraction.ExtractionRefusee as erreur:
         raise HTTPException(409, str(erreur))
 
+    try:
+        resultat = controle_export.appliquer(db, resultat, export=True)
+    except controle_export.ExportBloque as blocage:
+        journaliser(db, user, "EXPORT_BLOQUE_POLITIQUE", "demande", demande_id,
+                    raison=str(blocage), score=blocage.controle["score"],
+                    k_min=blocage.controle["k_min"])
+        db.commit()
+        raise HTTPException(409, str(blocage))
+    controle = resultat["controle"]
+
     journaliser(db, user, "EXTRACTION_EXPORTEE_DPO" if supervision else "EXTRACTION_EXPORTEE",
                 "demande", demande_id,
-                nb_lignes=resultat["nb_lignes"], format=format)
+                nb_lignes=resultat["nb_lignes"], format=format,
+                risque=controle["niveau"], score=controle["score"],
+                lignes_retirees=controle["nb_lignes_supprimees"],
+                politique=controle["politique"])
     db.commit()
 
     horodatage = datetime.now().strftime("%Y%m%d-%H%M")
