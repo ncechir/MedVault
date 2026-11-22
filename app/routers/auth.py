@@ -1,14 +1,19 @@
+import base64
+import binascii
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import mailer
 from app.audit import journaliser
 from app.database import get_db
 from app.dependencies import utilisateur_courant
-from app.models import Role, Utilisateur, maintenant
-from app.schemas import InscriptionIn, Token, UtilisateurOut
+from app.models import Demande, Role, Utilisateur, maintenant
+from app.schemas import (
+    InscriptionIn, MotDePasseIn, PhotoIn, ProfilMaj, ProfilOut, Token,
+)
 from app.security import creer_token, hacher_mot_de_passe, verifier_mot_de_passe
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
@@ -69,6 +74,91 @@ def inscription(payload: InscriptionIn, db: Session = Depends(get_db)):
     return Token(access_token=creer_token(user.id, user.role.value))
 
 
-@router.get("/me", response_model=UtilisateurOut)
-def moi(user: Utilisateur = Depends(utilisateur_courant)):
-    return user
+def _profil(db: Session, user: Utilisateur) -> ProfilOut:
+    nb = db.scalar(select(func.count(Demande.id)).where(Demande.demandeur_id == user.id)) or 0
+    sortie = ProfilOut.model_validate(user)
+    sortie.nb_demandes = nb
+    return sortie
+
+
+@router.get("/me", response_model=ProfilOut)
+def moi(user: Utilisateur = Depends(utilisateur_courant), db: Session = Depends(get_db)):
+    return _profil(db, user)
+
+
+@router.put("/profil", response_model=ProfilOut)
+def modifier_profil(
+    payload: ProfilMaj,
+    user: Utilisateur = Depends(utilisateur_courant),
+    db: Session = Depends(get_db),
+):
+    """Nom et service : l'adresse e-mail et le rôle ne se changent pas ici."""
+    user.nom_complet = payload.nom_complet.strip()
+    user.service = payload.service.strip()
+    journaliser(db, user, "PROFIL_MODIFIE", "utilisateur", user.id)
+    db.commit()
+    return _profil(db, user)
+
+
+# Signatures des seuls formats acceptés : on contrôle les octets, pas seulement
+# l'en-tête déclaré, et on refuse le SVG (qui peut embarquer du script).
+_FORMATS_PHOTO = {
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/webp": (b"RIFF",),
+}
+TAILLE_PHOTO_MAX = 150_000  # octets, après décodage
+
+
+@router.put("/photo", response_model=ProfilOut)
+def definir_photo(
+    payload: PhotoIn,
+    user: Utilisateur = Depends(utilisateur_courant),
+    db: Session = Depends(get_db),
+):
+    entete, _, donnees = payload.image.partition(",")
+    if not entete.startswith("data:") or not entete.endswith(";base64"):
+        raise HTTPException(422, "Image invalide.")
+    type_mime = entete[5:-7]
+    signatures = _FORMATS_PHOTO.get(type_mime)
+    if not signatures:
+        raise HTTPException(422, "Formats acceptés : PNG, JPEG ou WebP.")
+    try:
+        brut = base64.b64decode(donnees, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(422, "Image invalide.")
+    if len(brut) > TAILLE_PHOTO_MAX:
+        raise HTTPException(413, "Image trop lourde (150 Ko maximum).")
+    if not brut.startswith(signatures):
+        raise HTTPException(422, "Le contenu ne correspond pas au format annoncé.")
+    user.photo = payload.image
+    journaliser(db, user, "PHOTO_PROFIL_MODIFIEE", "utilisateur", user.id)
+    db.commit()
+    return _profil(db, user)
+
+
+@router.delete("/photo", response_model=ProfilOut)
+def supprimer_photo(
+    user: Utilisateur = Depends(utilisateur_courant), db: Session = Depends(get_db),
+):
+    user.photo = None
+    journaliser(db, user, "PHOTO_PROFIL_SUPPRIMEE", "utilisateur", user.id)
+    db.commit()
+    return _profil(db, user)
+
+
+@router.post("/mot-de-passe", status_code=204)
+def changer_mot_de_passe(
+    payload: MotDePasseIn,
+    user: Utilisateur = Depends(utilisateur_courant),
+    db: Session = Depends(get_db),
+):
+    if not verifier_mot_de_passe(payload.actuel, user.mot_de_passe_hash):
+        journaliser(db, user, "MOT_DE_PASSE_REFUSE", "utilisateur", user.id)
+        db.commit()
+        raise HTTPException(403, "Le mot de passe actuel est incorrect.")
+    if payload.nouveau == payload.actuel:
+        raise HTTPException(422, "Le nouveau mot de passe doit être différent de l'actuel.")
+    user.mot_de_passe_hash = hacher_mot_de_passe(payload.nouveau)
+    journaliser(db, user, "MOT_DE_PASSE_CHANGE", "utilisateur", user.id)
+    db.commit()

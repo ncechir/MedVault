@@ -43,6 +43,34 @@ class UtilisateurOut(Base):
     role: Role
 
 
+class ProfilOut(UtilisateurOut):
+    """Le compte vu par son titulaire : s'y ajoutent la photo et la date de création."""
+    photo: str | None = None
+    cree_le: UTCDatetime
+    nb_demandes: int = 0
+
+
+class ProfilMaj(Base):
+    nom_complet: str = Field(min_length=3, max_length=180)
+    service: str = Field(default="", max_length=120)
+
+
+class PhotoIn(Base):
+    image: str = Field(max_length=300_000)
+
+
+class MotDePasseIn(Base):
+    actuel: str = Field(min_length=1, max_length=128)
+    nouveau: str = Field(min_length=10, max_length=128)
+
+    @field_validator("nouveau")
+    @classmethod
+    def _solide(cls, valeur: str) -> str:
+        if not any(c.isalpha() for c in valeur) or not any(c.isdigit() for c in valeur):
+            raise ValueError("Le mot de passe doit contenir au moins une lettre et un chiffre.")
+        return valeur
+
+
 class InscriptionIn(Base):
     """Création de compte libre : adresse personnelle ou universitaire."""
     nom_complet: str = Field(min_length=3, max_length=180)
@@ -433,3 +461,59 @@ class IntegriteOut(Base):
     empreinte_tete: str
     verifie_le: UTCDatetime
     avertissement: str
+
+
+# --- Support ---
+CATEGORIES_SUPPORT = ("QUESTION", "PROBLEME", "SUPPRESSION", "AUTRE")
+
+
+class AuteurSupportOut(Base):
+    id: int
+    nom_complet: str
+    role: Role
+
+
+class MessageSupportOut(Base):
+    id: int
+    corps: str
+    cree_le: UTCDatetime
+    auteur: AuteurSupportOut
+
+
+class TicketOut(Base):
+    id: int
+    categorie: str
+    sujet: str
+    statut: str
+    cree_le: UTCDatetime
+    maj_le: UTCDatetime
+    auteur: AuteurSupportOut
+    messages: list[MessageSupportOut]
+
+
+class TicketIn(Base):
+    categorie: str = "QUESTION"
+    sujet: str = Field(min_length=3, max_length=160)
+    message: str = Field(min_length=3, max_length=4000)
+
+    @field_validator("categorie")
+    @classmethod
+    def _categorie(cls, valeur: str) -> str:
+        if valeur not in CATEGORIES_SUPPORT:
+            raise ValueError("Catégorie inconnue.")
+        return valeur
+
+
+class MessageIn(Base):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class StatutTicketIn(Base):
+    statut: str
+
+    @field_validator("statut")
+    @classmethod
+    def _statut(cls, valeur: str) -> str:
+        if valeur not in ("OUVERT", "CLOS"):
+            raise ValueError("Statut inconnu.")
+        return valeur

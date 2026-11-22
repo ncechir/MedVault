@@ -330,13 +330,13 @@ const ONGLETS = [
   { cle: "synthese",      libelle: "Synthèse",         roles: ["DPO"] },
   { cle: "journal",       libelle: "Connexions",       roles: ["ADMIN"] },
   { cle: "mails",         libelle: "E-mails",          roles: ["ADMIN"] },
+  { cle: "support",       libelle: "Support",          roles: ["CHERCHEUR", "ADMIN"] },
 ];
 
 async function demarrer() {
   $("#ecran-connexion").classList.add("hidden");
   $("#ecran-app").classList.remove("hidden");
-  $("#identite").textContent = etat.user.nom_complet;
-  $("#badge-role").textContent = ROLES[etat.user.role] ?? etat.user.role;
+  majEntete();
   $("#titre-demandes").textContent =
     etat.user.role === "CHERCHEUR" ? "Mes demandes" : "Demandes";
   $("#sous-titre-demandes").textContent = etat.user.role === "CHERCHEUR"
@@ -372,11 +372,13 @@ async function demarrer() {
   $("#salutation-dpo").textContent = `${moment} ${prenom}`;
 
   await majCompteurAlertes();
+  await majCompteurSupport();
 
   // On retrouve l'onglet quitté, s'il reste ouvert à ce rôle
   const memorisee = sessionStorage.getItem(CLE_VUE);
   const parDefaut = etat.user.role === "ADMIN" ? "comptes" : visibles[0].cle;
-  const depart = visibles.some(o => o.cle === memorisee) ? memorisee : parDefaut;
+  const depart = (memorisee === "profil" || visibles.some(o => o.cle === memorisee))
+    ? memorisee : parDefaut;
   afficher(depart);
 }
 
@@ -405,6 +407,8 @@ async function afficher(cle) {
   if (cle === "synthese")      await chargerSynthese();
   if (cle === "journal")       await chargerJournal();
   if (cle === "mails")         await chargerMails();
+  if (cle === "support")       await chargerSupport();
+  if (cle === "profil")        await chargerProfil();
 }
 
 // ==========================================================================
@@ -1793,6 +1797,11 @@ const RESUMES_ACTION = {
   EXPORT_BLOQUE_POLITIQUE: "Export bloqué par la politique",
   INTEGRITE_VERIFIEE: "Intégrité du journal vérifiée",
   RAPPORT_AUDIT_GENERE: "Rapport d'audit généré",
+  PROFIL_MODIFIE: "Profil modifié", PHOTO_PROFIL_MODIFIEE: "Photo de profil modifiée",
+  PHOTO_PROFIL_SUPPRIMEE: "Photo de profil retirée", MOT_DE_PASSE_CHANGE: "Mot de passe changé",
+  MOT_DE_PASSE_REFUSE: "Changement de mot de passe refusé",
+  SUPPORT_TICKET_OUVERT: "Message au support", SUPPORT_MESSAGE: "Réponse au support",
+  SUPPORT_STATUT: "Statut d'un message support",
 };
 
 
@@ -2028,6 +2037,227 @@ for (const [bouton, format] of [["#btn-journal-csv", "csv"], ["#btn-journal-json
   });
 }
 
+
+
+// ==========================================================================
+// En-tête : logo → accueil, nom → profil
+// ==========================================================================
+function pageAccueil() {
+  return etat.user.role === "ADMIN" ? "comptes"
+       : etat.user.role === "DPO" ? "pilotage" : "accueil";
+}
+
+function initiales(nom) {
+  const mots = String(nom ?? "").trim().split(/\s+/).filter(Boolean);
+  return ((mots[0]?.[0] ?? "?") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase();
+}
+
+/** Rond de photo, ou initiales à défaut. `taille` en pixels. */
+function avatar(u, taille) {
+  const base = `width:${taille}px;height:${taille}px;`;
+  if (u.photo) {
+    return `<img src="${echapper(u.photo)}" alt="" class="rounded-full object-cover block border border-trait" style="${base}">`;
+  }
+  return `<span class="rounded-full border border-trait bg-sable text-ardoise font-semibold flex items-center justify-center select-none"
+                style="${base}font-size:${Math.round(taille * 0.38)}px">${echapper(initiales(u.nom_complet))}</span>`;
+}
+
+function majEntete() {
+  $("#identite").textContent = etat.user.nom_complet;
+  $("#badge-role").textContent = ROLES[etat.user.role] ?? etat.user.role;
+  $("#avatar-entete").innerHTML = avatar(etat.user, 34);
+}
+
+$("#logo-accueil").addEventListener("click", () => afficher(pageAccueil()));
+$("#bouton-profil").addEventListener("click", () => afficher("profil"));
+
+// ==========================================================================
+// Profil
+// ==========================================================================
+async function chargerProfil() {
+  etat.user = await api("/auth/me");
+  majEntete();
+  const u = etat.user;
+  $("#profil-avatar").innerHTML = avatar(u, 84);
+  $("#profil-nom").textContent = u.nom_complet;
+  $("#profil-role").textContent = ROLES[u.role] ?? u.role;
+  $("#photo-supprimer").classList.toggle("hidden", !u.photo);
+  $("#p-nom").value = u.nom_complet;
+  $("#p-service").value = u.service ?? "";
+  $("#p-email").textContent = u.email;
+  $("#p-role").textContent = ROLES[u.role] ?? u.role;
+  $("#p-cree").textContent = dateFR(u.cree_le);
+  const chercheur = u.role === "CHERCHEUR";
+  $("#p-demandes-lib").classList.toggle("hidden", !chercheur);
+  $("#p-demandes").classList.toggle("hidden", !chercheur);
+  $("#p-demandes").textContent = `${u.nb_demandes} ${pl(u.nb_demandes, "demande déposée", "demandes déposées")}`;
+}
+
+$("#form-profil").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    etat.user = await api("/auth/profil", { methode: "PUT", corps: {
+      nom_complet: $("#p-nom").value.trim(), service: $("#p-service").value.trim() } });
+    notifier("Profil mis à jour.");
+    await chargerProfil();
+  } catch (err) { notifier(err.message, "erreur"); }
+});
+
+/** Recadre en carré et réduit à 256 px : une photo de téléphone pèse plusieurs
+ *  Mo, le serveur n'en accepte que 150 Ko. */
+function reduireImage(fichier) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(fichier);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const c = document.createElement("canvas");
+      c.width = c.height = 256;
+      const cote = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width - cote) / 2, (img.height - cote) / 2, cote, cote, 0, 0, 256, 256);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject({ message: "Image illisible." }); };
+    img.src = url;
+  });
+}
+
+$("#photo-choisir").addEventListener("click", () => $("#photo-fichier").click());
+$("#photo-fichier").addEventListener("change", async (e) => {
+  const fichier = e.target.files[0];
+  e.target.value = "";
+  if (!fichier) return;
+  try {
+    if (!/^image\/(png|jpeg|webp)$/.test(fichier.type)) throw { message: "Formats acceptés : PNG, JPEG ou WebP." };
+    const image = await reduireImage(fichier);
+    await api("/auth/photo", { methode: "PUT", corps: { image } });
+    notifier("Photo mise à jour.");
+    await chargerProfil();
+  } catch (err) { notifier(err.message, "erreur"); }
+});
+$("#photo-supprimer").addEventListener("click", async () => {
+  try {
+    await api("/auth/photo", { methode: "DELETE" });
+    notifier("Photo retirée.");
+    await chargerProfil();
+  } catch (err) { notifier(err.message, "erreur"); }
+});
+
+$("#form-mdp").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const erreur = $("#m-erreur");
+  erreur.classList.add("hidden");
+  try {
+    if ($("#m-nouveau").value !== $("#m-confirmation").value) {
+      throw { message: "Les deux nouveaux mots de passe ne sont pas identiques." };
+    }
+    await api("/auth/mot-de-passe", { methode: "POST", corps: {
+      actuel: $("#m-actuel").value, nouveau: $("#m-nouveau").value } });
+    e.target.reset();
+    notifier("Mot de passe modifié.");
+  } catch (err) {
+    erreur.textContent = err.message;
+    erreur.classList.remove("hidden");
+  }
+});
+
+// ==========================================================================
+// Support : chercheur ↔ administrateur
+// ==========================================================================
+const MOTIFS_SUPPORT = {
+  QUESTION: "Question", PROBLEME: "Problème", SUPPRESSION: "Suppression d'une demande", AUTRE: "Autre",
+};
+
+async function majCompteurSupport() {
+  const onglet = $('.onglet[data-onglet="support"] .libelle');
+  if (!onglet) return;
+  try {
+    const { a_traiter } = await api("/support/a-traiter");
+    onglet.innerHTML = `Support${a_traiter ? ` <span class="ml-1 inline-block min-w-[18px] text-center rounded-full bg-corail text-white text-[11px] leading-[18px] px-1">${a_traiter}</span>` : ""}`;
+  } catch { /* le badge est un confort : on l'ignore s'il échoue */ }
+}
+
+function messageSupport(m, ticketAuteurId) {
+  const admin = m.auteur.role === "ADMIN";
+  return `
+    <div class="flex gap-3 ${admin ? "" : "flex-row-reverse"}">
+      ${avatar(m.auteur, 30)}
+      <div class="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${admin ? "bg-sable" : "bg-vertpale"}">
+        <p class="text-[11px] text-ardoise mb-0.5">${echapper(m.auteur.nom_complet)} · ${admin ? "Administrateur" : "Chercheur"} · ${horodatageFR(m.cree_le)}</p>
+        <p class="whitespace-pre-wrap break-words">${echapper(m.corps)}</p>
+      </div>
+    </div>`;
+}
+
+async function chargerSupport() {
+  const admin = etat.user.role === "ADMIN";
+  $("#form-support").classList.toggle("hidden", admin);
+  $("#sous-titre-support").textContent = admin
+    ? "Les messages des chercheurs : questions, problèmes et demandes de suppression de dossier."
+    : "Posez une question à l'administrateur, signalez un problème ou demandez la suppression d'une de vos demandes.";
+  const tickets = await api("/support/tickets");
+  const cible = $("#liste-tickets");
+  if (!tickets.length) {
+    cible.innerHTML = `<div class="bg-carte rounded-xl border border-trait px-5 py-8 text-sm text-ardoise text-center">
+      ${admin ? "Aucun message pour le moment." : "Vous n'avez encore écrit à personne."}</div>`;
+  } else {
+    cible.innerHTML = tickets.map(t => `
+      <article class="bg-carte rounded-xl border border-trait p-5" data-ticket="${t.id}">
+        <header class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="min-w-0">
+            <h3 class="text-sm font-semibold">${echapper(t.sujet)}</h3>
+            <p class="text-xs text-ardoise mt-1">
+              ${admin ? `${echapper(t.auteur.nom_complet)} · ` : ""}${echapper(MOTIFS_SUPPORT[t.categorie] ?? t.categorie)}
+              · ouvert le ${dateCourte(t.cree_le)}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            ${t.statut === "OUVERT" ? chip("Ouvert", "border-ambre text-ambre bg-ambrepale") : chip("Clos", "border-trait text-ardoise")}
+            ${admin ? `<button class="statut rounded-lg border border-trait px-3 py-1 text-xs font-medium hover:border-corail hover:text-corailfonce transition-colors"
+                         data-id="${t.id}" data-statut="${t.statut === "OUVERT" ? "CLOS" : "OUVERT"}">
+                         ${t.statut === "OUVERT" ? "Clore" : "Rouvrir"}</button>` : ""}
+          </div>
+        </header>
+        <div class="mt-4 space-y-3">${t.messages.map(m => messageSupport(m)).join("")}</div>
+        <form class="repondre mt-4 flex gap-2 items-end" data-id="${t.id}">
+          <textarea rows="2" maxlength="4000" required placeholder="Votre réponse…"
+                    class="flex-1 rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm"></textarea>
+          <button type="submit" class="rounded-lg bg-encre text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity">Envoyer</button>
+        </form>
+      </article>`).join("");
+
+    $$("#liste-tickets .repondre").forEach(f => f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api(`/support/tickets/${f.dataset.id}/messages`, {
+          methode: "POST", corps: { message: $("textarea", f).value.trim() } });
+        await chargerSupport();
+        await majCompteurSupport();
+      } catch (err) { notifier(err.message, "erreur"); }
+    }));
+    $$("#liste-tickets .statut").forEach(b => b.addEventListener("click", async () => {
+      try {
+        await api(`/support/tickets/${b.dataset.id}/statut`, {
+          methode: "POST", corps: { statut: b.dataset.statut } });
+        await chargerSupport();
+        await majCompteurSupport();
+      } catch (err) { notifier(err.message, "erreur"); }
+    }));
+  }
+}
+
+$("#form-support").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/support/tickets", { methode: "POST", corps: {
+      categorie: $("#s-categorie").value, sujet: $("#s-sujet").value.trim(),
+      message: $("#s-message").value.trim() } });
+    e.target.reset();
+    notifier("Message envoyé à l'administrateur.");
+    await chargerSupport();
+    await majCompteurSupport();
+  } catch (err) { notifier(err.message, "erreur"); }
+});
 
 // ==========================================================================
 // Reprise de session

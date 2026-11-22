@@ -13,7 +13,7 @@ from app.database import Base, SessionLocal, engine
 from app.models import Utilisateur
 from app.routers import (
     auth, autorisations, demandes, extractions, hopitaux, import_donnees, journal,
-    lots, mails, notifications, parametres, politiques, rapports, utilisateurs,
+    lots, mails, notifications, parametres, politiques, rapports, support, utilisateurs,
 )
 
 logger = logging.getLogger("medvault")
@@ -52,15 +52,20 @@ def _verifier_schema() -> None:
 
 
 def _migrer_colonnes() -> None:
-    """Ajoute les colonnes de chaînage à un journal créé avant la V2."""
+    """Ajoute les colonnes apparues après coup : chaînage du journal (V2) et
+    photo de profil, pour qu'une base existante reste utilisable."""
     insp = inspect(engine)
-    if "journal_audit" not in insp.get_table_names():
-        return
-    existantes = {c["name"] for c in insp.get_columns("journal_audit")}
+    tables = insp.get_table_names()
     with engine.begin() as cx:
-        for nom in ("empreinte_precedente", "empreinte"):
-            if nom not in existantes:
-                cx.execute(text(f"ALTER TABLE journal_audit ADD COLUMN {nom} VARCHAR(64)"))
+        if "journal_audit" in tables:
+            existantes = {c["name"] for c in insp.get_columns("journal_audit")}
+            for nom in ("empreinte_precedente", "empreinte"):
+                if nom not in existantes:
+                    cx.execute(text(f"ALTER TABLE journal_audit ADD COLUMN {nom} VARCHAR(64)"))
+        if "utilisateur" in tables:
+            existantes = {c["name"] for c in insp.get_columns("utilisateur")}
+            if "photo" not in existantes:
+                cx.execute(text("ALTER TABLE utilisateur ADD COLUMN photo TEXT"))
 
 
 def _restreindre_hopitaux() -> None:
@@ -160,6 +165,7 @@ app.include_router(hopitaux.router)
 app.include_router(import_donnees.router)
 app.include_router(mails.router)
 app.include_router(politiques.router)
+app.include_router(support.router)
 
 
 @app.get("/sante", tags=["Technique"])

@@ -86,6 +86,9 @@ class Utilisateur(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.CHERCHEUR)
     actif: Mapped[bool] = mapped_column(Boolean, default=True)
     cree_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    # Photo de profil : petite image (JPEG/PNG/WebP) réduite par le navigateur et
+    # stockée en « data URL ». Facultative ; jamais une donnée de santé.
+    photo: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     demandes: Mapped[list[Demande]] = relationship(
         back_populates="demandeur", foreign_keys="Demande.demandeur_id"
@@ -505,3 +508,36 @@ class PolitiqueDonnees(Base):
     par_defaut: Mapped[bool] = mapped_column(Boolean, default=False)
     cree_par_id: Mapped[int | None] = mapped_column(ForeignKey("utilisateur.id"), nullable=True)
     cree_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+
+
+class TicketSupport(Base):
+    """Échange entre un chercheur et l'administrateur : question, incident,
+    demande de suppression d'un dossier. Aucune donnée de santé n'y circule."""
+    __tablename__ = "ticket_support"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    auteur_id: Mapped[int] = mapped_column(ForeignKey("utilisateur.id"), index=True)
+    categorie: Mapped[str] = mapped_column(String(30), default="QUESTION")
+    sujet: Mapped[str] = mapped_column(String(160))
+    statut: Mapped[str] = mapped_column(String(10), default="OUVERT", index=True)
+    cree_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    maj_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+
+    auteur: Mapped[Utilisateur] = relationship(foreign_keys=[auteur_id])
+    messages: Mapped[list[MessageSupport]] = relationship(
+        back_populates="ticket", order_by="MessageSupport.id",
+        cascade="all, delete-orphan",
+    )
+
+
+class MessageSupport(Base):
+    __tablename__ = "message_support"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticket_id: Mapped[int] = mapped_column(ForeignKey("ticket_support.id"), index=True)
+    auteur_id: Mapped[int] = mapped_column(ForeignKey("utilisateur.id"))
+    corps: Mapped[str] = mapped_column(Text)
+    cree_le: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+
+    ticket: Mapped[TicketSupport] = relationship(back_populates="messages")
+    auteur: Mapped[Utilisateur] = relationship(foreign_keys=[auteur_id])

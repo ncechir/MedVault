@@ -379,14 +379,18 @@ tailwind.config = {
            et le rôle se placent de chaque côté. -->
       <span class="ligne-entete absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px]"></span>
       <div class="relative z-10 bg-carte pl-4 lg:pl-5 pr-4 flex items-center">
-        <span class="flex items-center gap-2.5"><img src="assets/bouclier.png" alt="" class="h-[44px] w-auto shrink-0 block"><span class="flex flex-col"><img src="assets/medvault-texte.png" alt="Medvault" class="mot-marque h-[14px] w-auto self-start relative top-0.5"><span class="slogan uppercase text-ardoise text-[7.5px] mt-1">Votre coffre-fort de données médicales</span></span></span>
+        <button id="logo-accueil" type="button" title="Retour à l'accueil" aria-label="Retour à l'accueil" class="flex items-center gap-2.5 text-left cursor-pointer bg-transparent border-0 p-0"><img src="assets/bouclier.png" alt="" class="h-[44px] w-auto shrink-0 block"><span class="flex flex-col"><img src="assets/medvault-texte.png" alt="Medvault" class="mot-marque h-[14px] w-auto self-start relative top-0.5"><span class="slogan uppercase text-ardoise text-[7.5px] mt-1">Votre coffre-fort de données médicales</span></span></button>
       </div>
       <span class="ecg flex-1 relative z-0 mx-2"></span>
 
-      <div class="relative shrink-0 hidden sm:block text-right px-3.5">
-        <p id="identite" class="relative text-sm font-semibold leading-none pb-1.5"></p>
-        <p id="badge-role" class="relative text-xs text-ardoise leading-none pt-2"></p>
-      </div>
+      <button id="bouton-profil" type="button" title="Mon profil" aria-label="Mon profil"
+              class="relative shrink-0 hidden sm:flex items-center gap-3 text-right px-3.5 cursor-pointer bg-transparent border-0 group">
+        <span id="avatar-entete" class="relative z-10 shrink-0"></span>
+        <span class="block">
+          <span id="identite" class="relative block text-sm font-semibold leading-none pb-1.5 group-hover:text-corailfonce transition-colors"></span>
+          <span id="badge-role" class="relative block text-xs text-ardoise leading-none pt-2"></span>
+        </span>
+      </button>
 
       <select data-selecteur-langue aria-label="Langue" class="selecteur-langue ml-3 shrink-0 relative z-10"></select>
       <button id="interrupteur-theme" type="button" aria-label="Changer d'apparence" aria-pressed="false"
@@ -810,6 +814,106 @@ tailwind.config = {
       <div id="liste-mails" class="mt-6 bg-carte rounded-xl border border-trait overflow-hidden"></div>
     </section>
 
+    <section data-vue="support" class="vue hidden">
+      <h2 id="titre-support" class="text-2xl font-bold tracking-tight">Support</h2>
+      <p id="sous-titre-support" class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed"></p>
+
+      <form id="form-support" class="hidden mt-6 bg-carte rounded-xl border border-trait p-5 max-w-3xl">
+        <h3 class="text-sm font-semibold">Écrire à l'administrateur</h3>
+        <div class="grid sm:grid-cols-[220px_1fr] gap-3 mt-3">
+          <label class="block">
+            <span class="text-xs text-ardoise">Motif</span>
+            <select id="s-categorie" class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+              <option value="QUESTION">Question</option>
+              <option value="PROBLEME">Signaler un problème</option>
+              <option value="SUPPRESSION">Demander la suppression d'une demande</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-ardoise">Objet</span>
+            <input id="s-sujet" type="text" maxlength="160" required
+                   class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+          </label>
+        </div>
+        <label class="block mt-3">
+          <span class="text-xs text-ardoise">Message</span>
+          <textarea id="s-message" rows="4" maxlength="4000" required
+                    class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm"></textarea>
+        </label>
+        <p class="text-xs text-ardoise mt-2">N'écrivez ici aucune donnée de santé : indiquez seulement la référence du dossier (par exemple DA-2026-0001).</p>
+        <button type="submit" class="mt-3 rounded-lg bg-encre text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity">Envoyer</button>
+      </form>
+
+      <div id="liste-tickets" class="mt-6 space-y-4 max-w-3xl"></div>
+    </section>
+
+    <section data-vue="profil" class="vue hidden">
+      <h2 class="text-2xl font-bold tracking-tight">Mon profil</h2>
+      <p class="text-sm text-ardoise mt-1.5 max-w-2xl">Vos informations, votre photo et votre mot de passe.</p>
+
+      <div class="mt-6 grid lg:grid-cols-2 gap-5 max-w-5xl items-start">
+        <div class="bg-carte rounded-xl border border-trait p-5">
+          <div class="flex items-center gap-5">
+            <div id="profil-avatar"></div>
+            <div class="min-w-0">
+              <p id="profil-nom" class="text-lg font-semibold truncate"></p>
+              <p id="profil-role" class="text-sm text-ardoise"></p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <button id="photo-choisir" type="button" class="rounded-lg border border-trait px-3 py-1.5 text-xs font-medium hover:border-corail hover:text-corailfonce transition-colors">Changer la photo</button>
+                <button id="photo-supprimer" type="button" class="rounded-lg border border-trait text-ardoise px-3 py-1.5 text-xs font-medium hover:border-brique hover:text-brique transition-colors">Retirer</button>
+              </div>
+              <input id="photo-fichier" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
+            </div>
+          </div>
+          <p class="text-xs text-ardoise mt-3">Image PNG, JPEG ou WebP. Elle est recadrée en carré et réduite automatiquement.</p>
+
+          <form id="form-profil" class="mt-5 pt-5 border-t border-trait space-y-3">
+            <h3 class="text-sm font-semibold">Informations personnelles</h3>
+            <label class="block">
+              <span class="text-xs text-ardoise">Nom complet</span>
+              <input id="p-nom" type="text" minlength="3" maxlength="180" required
+                     class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+            </label>
+            <label class="block">
+              <span class="text-xs text-ardoise">Service</span>
+              <input id="p-service" type="text" maxlength="120"
+                     class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+            </label>
+            <dl class="text-sm grid grid-cols-[110px_1fr] gap-y-1.5 pt-1">
+              <dt class="text-ardoise">Adresse e-mail</dt><dd id="p-email" class="break-all"></dd>
+              <dt class="text-ardoise">Rôle</dt><dd id="p-role"></dd>
+              <dt class="text-ardoise">Compte créé le</dt><dd id="p-cree"></dd>
+              <dt id="p-demandes-lib" class="text-ardoise">Demandes</dt><dd id="p-demandes"></dd>
+            </dl>
+            <button type="submit" class="rounded-lg bg-encre text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity">Enregistrer</button>
+          </form>
+        </div>
+
+        <form id="form-mdp" class="bg-carte rounded-xl border border-trait p-5 space-y-3" autocomplete="off">
+          <h3 class="text-sm font-semibold">Changer le mot de passe</h3>
+          <label class="block">
+            <span class="text-xs text-ardoise">Mot de passe actuel</span>
+            <input id="m-actuel" type="password" autocomplete="current-password" required
+                   class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs text-ardoise">Nouveau mot de passe</span>
+            <input id="m-nouveau" type="password" autocomplete="new-password" minlength="10" required
+                   class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs text-ardoise">Confirmer le nouveau mot de passe</span>
+            <input id="m-confirmation" type="password" autocomplete="new-password" minlength="10" required
+                   class="mt-1 w-full rounded-lg border border-trait bg-sable/50 px-3 py-2 text-sm">
+          </label>
+          <p class="text-xs text-ardoise">10 caractères minimum, avec au moins une lettre et un chiffre.</p>
+          <p id="m-erreur" class="hidden text-sm text-brique"></p>
+          <button type="submit" class="rounded-lg bg-encre text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity">Changer le mot de passe</button>
+        </form>
+      </div>
+    </section>
+
     <section data-vue="comptes" class="vue hidden">
       <h2 class="text-2xl font-bold tracking-tight">Comptes</h2>
       <p class="text-sm text-ardoise mt-1.5 max-w-2xl leading-relaxed">
@@ -899,6 +1003,6 @@ tailwind.config = {
 
 <div id="notif" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm text-white shadow-lg z-50"></div>
 
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
