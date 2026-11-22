@@ -636,14 +636,28 @@ $("#btn-soumettre").addEventListener("click", async () => {
   try {
     await api(`/demandes/${id}/soumettre`, { methode: "POST" });
     notifier("Demande transmise au délégué.");
-    etat.demandeId = null;
-    $("#btn-soumettre").disabled = true;
+    await reinitialiserFormulaireDemande();
     afficher("demandes");
   } catch (err) {
     if (err.rapport) rendreConformite(err.rapport, $("#panneau-conformite"));
     notifier(err.message, "erreur");
   }
 });
+
+/** Remet le formulaire à zéro après un dépôt : on peut en saisir une autre. */
+async function reinitialiserFormulaireDemande() {
+  clearTimeout(minuteurAutosave);
+  $("#d-titre").value = "";
+  $("#d-finalite").value = "";
+  $("#compteur-finalite").textContent = "0";
+  $("#compteur-finalite").className = "text-brique";
+  const aujourdhui = new Date();
+  const dans6mois = new Date(); dans6mois.setMonth(dans6mois.getMonth() + 6);
+  $("#d-debut").value = aujourdhui.toISOString().slice(0, 10);
+  $("#d-fin").value = dans6mois.toISOString().slice(0, 10);
+  // Recharge les colonnes, services et le panneau de conformité du lot courant
+  await chargerChamps(Number($("#d-lot").value));
+}
 
 // ==========================================================================
 // Rapport de conformité
