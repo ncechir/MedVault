@@ -10,3 +10,4 @@ httpx
 apscheduler
 openpyxl
 reportlab
+psycopg2-binary
