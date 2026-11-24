@@ -126,7 +126,8 @@ def _ecg(canv: canvas.Canvas, x1: float, x2: float, y: float) -> None:
     canv.drawPath(p, stroke=1, fill=0)
 
 
-def _entete(canv: canvas.Canvas, reference: str) -> float:
+def _entete(canv: canvas.Canvas, reference: str, titre: str = "ATTESTATION D'ACCÈS",
+            sous_titre: str = "AUX DONNÉES DE SANTÉ PSEUDONYMISÉES") -> float:
     y = HAUTEUR - 22 * mm
     bouclier = DOSSIER_LOGOS / "bouclier.png"
     mot = DOSSIER_LOGOS / "medvault-texte.png"
@@ -161,11 +162,11 @@ def _entete(canv: canvas.Canvas, reference: str) -> float:
     y -= 22 * mm
     _c(canv, ENCRE)
     canv.setFont("Helvetica-Bold", 22)
-    canv.drawCentredString(LARGEUR / 2, y, "ATTESTATION D'ACCÈS")
+    canv.drawCentredString(LARGEUR / 2, y, titre)
     y -= 7 * mm
     _c(canv, ARDOISE)
     canv.setFont("Helvetica", 10)
-    canv.drawCentredString(LARGEUR / 2, y, "AUX DONNÉES DE SANTÉ PSEUDONYMISÉES")
+    canv.drawCentredString(LARGEUR / 2, y, sous_titre)
     y -= 9 * mm
     _ecg(canv, MARGE, LARGEUR - MARGE, y)
     return y - 14 * mm

@@ -3,15 +3,17 @@ import io
 from collections import Counter
 from datetime import date, datetime
 
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.pdfgen import canvas
 
-BLEU = colors.HexColor("#2F5D8C")
-CORAIL = colors.HexColor("#D96A53")
-GRIS = colors.HexColor("#5B6770")
+from app.attestation import (
+    ARDOISE, BLANC, BLEU, CREVETTE, ENCRE, FOND, HAUTEUR, LARGEUR, MARGE, TRAIT,
+    _c, _decouper, _entete, _trait,
+)
+
+VERT = (0.18, 0.49, 0.36)   # #2E7D5B
+ROUGE = (0.70, 0.15, 0.12)  # #B3261E
 
 LIBELLES = {
     "DEMANDE_VALIDEE": "Accès accordés", "DEMANDE_REFUSEE": "Demandes refusées",
@@ -29,76 +31,171 @@ LIBELLES = {
 
 def generer(*, integrite: dict, entrees: list, politique, debut: date | None,
             fin: date | None, par: str, genere_le: datetime) -> bytes:
+    """Même mise en page que l'attestation d'accès : en-tête, encarts, pied de page."""
     tampon = io.BytesIO()
-    doc = SimpleDocTemplate(tampon, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm,
-                            topMargin=18 * mm, bottomMargin=18 * mm,
-                            title="Rapport d'audit MedVault", author="MedVault")
-    st = getSampleStyleSheet()
-    titre = ParagraphStyle("t", parent=st["Title"], textColor=BLEU, fontSize=20,
-                           alignment=0, spaceAfter=2)
-    h2 = ParagraphStyle("h2", parent=st["Heading2"], textColor=BLEU, fontSize=12.5,
-                        spaceBefore=12, spaceAfter=4)
-    txt = ParagraphStyle("x", parent=st["BodyText"], fontSize=9.5, leading=13)
-    petit = ParagraphStyle("p", parent=txt, fontSize=8, textColor=GRIS, leading=11)
-    mono = ParagraphStyle("m", parent=txt, fontName="Courier", fontSize=8, leading=10)
+    canv = canvas.Canvas(tampon, pagesize=A4)
+    canv.setTitle("Rapport d'audit MedVault")
+    canv.setAuthor("MedVault")
+    largeur_utile = LARGEUR - 2 * MARGE
+    reference = f"AUD-{genere_le:%Y%m%d-%H%M}"
 
     if debut or fin:
-        periode = ("période : " + (f"du {debut:%d/%m/%Y}" if debut else "depuis l'origine")
+        periode = ((f"du {debut:%d/%m/%Y}" if debut else "depuis l'origine")
                    + (f" au {fin:%d/%m/%Y}" if fin else " à ce jour"))
     else:
-        periode = "période : ensemble du journal"
+        periode = "ensemble du journal"
 
-    el = [Paragraph("Rapport d'audit", titre),
-          Paragraph(f"MedVault · CHU Sophia (données synthétiques) · {periode}", petit),
-          Paragraph(f"Généré le {genere_le.strftime('%d/%m/%Y à %H:%M')} par {par}", petit)]
+    def pied() -> None:
+        _trait(canv, MARGE, 20 * mm, LARGEUR - MARGE)
+        _c(canv, ARDOISE)
+        canv.setFont("Helvetica", 7.5)
+        canv.drawString(MARGE, 15 * mm, "Document généré automatiquement par le portail MedVault — "
+                                        "ne constitue pas une certification de conformité.")
+        canv.drawString(MARGE, 11 * mm, "Données synthétiques · CHU Sophia.")
+        canv.drawRightString(LARGEUR - MARGE, 15 * mm, f"Réf. {reference}")
 
-    el.append(Paragraph("1. Intégrité du journal", h2))
+    etat = {"y": _entete(canv, reference, "RAPPORT D'AUDIT",
+                         "INTÉGRITÉ DU JOURNAL ET ACTIVITÉ")}
+
+    def place(hauteur: float) -> None:
+        """Passe à une nouvelle page si le bloc ne tient pas."""
+        if etat["y"] - hauteur < 28 * mm:
+            pied()
+            canv.showPage()
+            etat["y"] = HAUTEUR - 25 * mm
+
+    def titre_section(texte: str) -> None:
+        place(34 * mm)
+        _c(canv, BLEU)
+        canv.setFont("Helvetica-Bold", 8.5)
+        canv.drawString(MARGE, etat["y"], texte.upper())
+        etat["y"] -= 3 * mm
+
+    def encart(lignes: list[tuple[str, str, tuple]], taille: float = 10) -> None:
+        """Encart bleu clair avec liseré crevette ; lignes = (texte, police, couleur)."""
+        interne = largeur_utile - 12 * mm
+        rendu = []
+        for texte, police, couleur in lignes:
+            for morceau in _decouper(canv, texte, police, taille, interne):
+                rendu.append((morceau, police, couleur))
+        hauteur = len(rendu) * 4.8 * mm + 8 * mm
+        place(hauteur + 6 * mm)
+        haut = etat["y"]
+        _c(canv, FOND)
+        canv.setStrokeColorRGB(*TRAIT)
+        canv.roundRect(MARGE, haut - hauteur, largeur_utile, hauteur, 2 * mm, stroke=1, fill=1)
+        _c(canv, CREVETTE)
+        canv.rect(MARGE, haut - hauteur, 1.6 * mm, hauteur, stroke=0, fill=1)
+        yy = haut - 6.5 * mm
+        for texte, police, couleur in rendu:
+            _c(canv, couleur)
+            canv.setFont(police, taille)
+            canv.drawString(MARGE + 6 * mm, yy, texte)
+            yy -= 4.8 * mm
+        etat["y"] = haut - hauteur - 6 * mm
+
+    # --- en-tête du document ---
+    y = etat["y"]
+    _c(canv, ENCRE)
+    canv.setFont("Helvetica", 10.5)
+    canv.drawString(MARGE, y, "Période")
+    canv.setFont("Helvetica-Bold", 10.5)
+    canv.drawString(MARGE + 24 * mm, y, periode)
+    _trait(canv, MARGE + 22 * mm, y - 1.8 * mm, LARGEUR - MARGE)
+    y -= 8 * mm
+    _c(canv, ENCRE)
+    canv.setFont("Helvetica", 10.5)
+    canv.drawString(MARGE, y, "Généré le")
+    canv.setFont("Helvetica-Bold", 10.5)
+    canv.drawString(MARGE + 24 * mm, y,
+                    f"{genere_le:%d/%m/%Y à %H:%M} par {par}")
+    _trait(canv, MARGE + 22 * mm, y - 1.8 * mm, LARGEUR - MARGE)
+    etat["y"] = y - 11 * mm
+
+    # --- 1. intégrité ---
+    titre_section("1. Intégrité du journal")
+    etat["y"] -= 5 * mm
     if integrite["valide"]:
-        etat = "<font color='#2E7D5B'><b>Chaîne intègre</b></font> : aucune rupture détectée."
+        statut = ("Chaîne intègre : aucune rupture détectée.", VERT)
     else:
         a = integrite["premiere_anomalie"]
-        etat = (f"<font color='#B3261E'><b>Anomalie détectée</b></font> dès l'entrée "
-                f"n° {a['id']} : {a['motif']}. ({integrite['nb_anomalies']} anomalie(s).)")
-    el.append(Paragraph(etat, txt))
-    el.append(Paragraph(
-        f"{integrite['nb_total']} entrée(s) au total, dont {integrite['nb_chainees']} "
-        f"chaînée(s) par empreinte SHA-256 et {integrite['nb_anterieures']} antérieure(s) "
-        f"à l'introduction du chaînage (non vérifiables).", txt))
-    el.append(Spacer(1, 4))
-    el.append(Paragraph("Empreinte de tête (à conserver hors de la base) :", petit))
-    el.append(Paragraph(integrite["empreinte_tete"] or "—", mono))
-    el.append(Paragraph(integrite["avertissement"], petit))
+        statut = (f"Anomalie détectée dès l'entrée n° {a['id']} : {a['motif']}. "
+                  f"({integrite['nb_anomalies']} anomalie(s).)", ROUGE)
+    encart([
+        (statut[0], "Helvetica-Bold", statut[1]),
+        (f"{integrite['nb_total']} entrée(s) au total, dont {integrite['nb_chainees']} "
+         f"chaînée(s) par empreinte SHA-256 et {integrite['nb_anterieures']} antérieure(s) "
+         f"à l'introduction du chaînage (non vérifiables).", "Helvetica", ENCRE),
+    ])
+    place(30 * mm)
+    _c(canv, BLEU)
+    canv.setFont("Helvetica-Bold", 8)
+    canv.drawString(MARGE, etat["y"] + 2 * mm, "EMPREINTE DE TÊTE (À CONSERVER HORS DE LA BASE)")
+    etat["y"] -= 4 * mm
+    _c(canv, ENCRE)
+    empreinte = integrite["empreinte_tete"] or "—"
+    for i in range(0, len(empreinte), 64):
+        canv.setFont("Courier", 8.5)
+        canv.drawString(MARGE, etat["y"], empreinte[i:i + 64])
+        etat["y"] -= 4.5 * mm
+    etat["y"] -= 1 * mm
+    _c(canv, ARDOISE)
+    canv.setFont("Helvetica", 8)
+    for ligne in _decouper(canv, integrite["avertissement"], "Helvetica", 8, largeur_utile):
+        canv.drawString(MARGE, etat["y"], ligne)
+        etat["y"] -= 4 * mm
+    etat["y"] -= 5 * mm
 
-    el.append(Paragraph("2. Activité sur la période", h2))
+    # --- 2. activité ---
+    titre_section("2. Activité sur la période")
+    etat["y"] -= 6 * mm
     compte = Counter(e.action for e in entrees)
-    lignes = [["Événement", "Nombre"]]
-    for code, lib in LIBELLES.items():
-        if compte.get(code):
-            lignes.append([lib, str(compte[code])])
-    if len(lignes) == 1:
-        lignes.append(["Aucun événement de ce type sur la période", "0"])
-    tab = Table(lignes, colWidths=[120 * mm, 30 * mm])
-    tab.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), BLEU), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTSIZE", (0, 0), (-1, -1), 9), ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F3F6F9")]),
-        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#D5DDE5")),
-    ]))
-    el.append(tab)
+    lignes = [(lib, compte[code]) for code, lib in LIBELLES.items() if compte.get(code)]
+    if not lignes:
+        lignes = [("Aucun événement de ce type sur la période", 0)]
+    place(14 * mm)
+    canv.setStrokeColorRGB(*TRAIT)
+    _c(canv, BLEU)
+    canv.setFont("Helvetica-Bold", 8)
+    canv.drawString(MARGE, etat["y"], "ÉVÉNEMENT")
+    canv.drawRightString(LARGEUR - MARGE, etat["y"], "NOMBRE")
+    _trait(canv, MARGE, etat["y"] - 2 * mm, LARGEUR - MARGE, BLEU, 0.9)
+    etat["y"] -= 7 * mm
+    for libelle, n in lignes:
+        place(10 * mm)
+        _c(canv, ENCRE)
+        canv.setFont("Helvetica", 10)
+        canv.drawString(MARGE, etat["y"], libelle)
+        canv.setFont("Helvetica-Bold", 10)
+        canv.drawRightString(LARGEUR - MARGE, etat["y"], str(n))
+        _trait(canv, MARGE, etat["y"] - 2 * mm, LARGEUR - MARGE)
+        etat["y"] -= 6 * mm
+    etat["y"] -= 4 * mm
 
-    el.append(Paragraph("3. Politique de confidentialité en vigueur", h2))
+    # --- 3. politique ---
+    titre_section("3. Politique de confidentialité en vigueur")
+    etat["y"] -= 5 * mm
     actions = {"AVERTIR": "avertir", "SUPPRIMER": "retirer les petits groupes",
                "BLOQUER": "bloquer l'export"}
-    el.append(Paragraph(
-        f"<b>{politique.nom}</b> : seuil de k-anonymat k ≥ {politique.k_min}, "
-        f"action : {actions.get(politique.action, politique.action)}"
-        + (f", export limité à {politique.max_lignes_export} lignes."
-           if politique.max_lignes_export else "."), txt))
+    encart([
+        (politique.nom, "Helvetica-Bold", ENCRE),
+        (f"Seuil de k-anonymat k ≥ {politique.k_min}, "
+         f"action : {actions.get(politique.action, politique.action)}"
+         + (f", export limité à {politique.max_lignes_export} lignes."
+            if politique.max_lignes_export else "."), "Helvetica", ENCRE),
+    ])
 
-    el.append(Paragraph("4. Portée et limites", h2))
-    el.append(Paragraph(
-        "Ce rapport décrit l'activité enregistrée par le portail ; il ne constitue pas "
-        "une certification de conformité. Le contrôle k-anonymat porte sur les colonnes "
-        "livrées et ne tient pas compte des données détenues par des tiers.", txt))
-    doc.build(el)
+    # --- 4. portée ---
+    titre_section("4. Portée et limites")
+    etat["y"] -= 5 * mm
+    encart([
+        ("Ce rapport décrit l'activité enregistrée par le portail ; il ne constitue pas "
+         "une certification de conformité. Le contrôle k-anonymat porte sur les colonnes "
+         "livrées et ne tient pas compte des données détenues par des tiers.",
+         "Helvetica", ENCRE),
+    ], taille=9.5)
+
+    pied()
+    canv.showPage()
+    canv.save()
     return tampon.getvalue()
